@@ -55,14 +55,26 @@ def open_bed(bed):
     bed_object = BedTool(bed)
     return bed_object
 
-def main(bam,output_prefix,sample):
+def set_tags(read,score,amplicon,read_class):
 
-    bamfile = pysam.AlignmentFile(bam, "rb")
+    read.set_tag('XS',score)
+    read.set_tag('XA',amplicon)
+    read.set_tag('XC',read_class)
+    read.set_tag('RG', read_class)
+
+    return read
+
+
+def main(args):
+
+    inbamfile = pysam.AlignmentFile(args.bam, "rb")
+    bam_header = inbamfile.header.copy().to_dict()
+    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wh", header=bam_header)
 
     orf_bed_object = open_bed('resources/orf_start.bed')
     amplicon_bed_object= open_bed('resources/artic_amplicons_V1.bed')
     primer_bed_object=read_bed_file('resources/artic_primers_V1.bed')
-    outfile = output_prefix + "_seq_search.tsv"
+    outfile = args.output_prefix + "_seq_search.tsv"
 
     # set up dictionary for normalisation
     # need to get all regions in bed and make into a dict
@@ -82,7 +94,7 @@ def main(bam,output_prefix,sample):
      # set up an expression summary - so per ORF?
     orf_norm = {}
     for orf in orf_bed_object:
-        print(orf.name)
+        # print(orf.name)
         orf_norm[orf.name] = 0
 
     # get amplicon for each ORF
@@ -97,17 +109,21 @@ def main(bam,output_prefix,sample):
 
     file = open(outfile, "w")
     file.write("sample\tread_id\tposition\torf\tscore\tsequence\n")
+    print(datetime.datetime.now())
 
-    for read in bamfile:
+
+
+
+    for read in inbamfile:
 
 
         if read.is_unmapped:
-            print("%s skipped as unmapped" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s skipped as unmapped" %
+            #       (read.query_name), file=sys.stderr)
             continue
         if read.is_supplementary:
-            print("%s skipped as supplementary" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s skipped as supplementary" %
+            #       (read.query_name), file=sys.stderr)
             continue
 
         # print(read.query_name)
@@ -132,28 +148,30 @@ def main(bam,output_prefix,sample):
         # if the left and right ampicon match then it's genome
         # todo: amplion 1 is genomic and contains leader, so here we need to do something else?
         if left_amplicon == right_amplicon:
-            print("%s ampilcon matches so genomic" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s ampilcon matches so genomic" %
+            #       (read.query_name), file=sys.stderr)
             read_class = "gRNA"
             total_counts[right_amplicon]["total_reads"]+=1
             total_counts[right_amplicon]["genomic_reads"] += 1
         # if the left and right amplicon do not match it's sub-genomic
         elif left_amplicon != right_amplicon:
-            print("%s ampilcon mismatch so likely sub-genomic" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s ampilcon mismatch so likely sub-genomic" %
+            #       (read.query_name), file=sys.stderr)
             read_class = "sgRNA"
             total_counts[right_amplicon]["total_reads"] += 1
             total_counts[right_amplicon]["sg_reads"] += 1
 
         # ok so now, if read is an ORF, if leader is found, and artic is sgRNA then add to orf counts
         if result["read_orf"] != None:
-            if read_class == "sgRNA":
-                if result["align_score"] > 50:
-                    orf_counts[result["read_orf"]]+=1
+            if result["align_score"] > int(args.score_cutoff):
+                orf_counts[result["read_orf"]]+=1
+
+        set_tags(read,result["align_score"],right_amplicon,read_class)
 
         # output = sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" + str(result["sequence"]) + "\n"
-        output = sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)
-        print(output)
+        output = args.sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)
+        # print(output)
+        outbamfile.write(read)
         file.write(output+"\n")
 
 
@@ -172,22 +190,24 @@ def main(bam,output_prefix,sample):
             orf_norm[orf] = 'NA'
     print(orf_counts)
     print(orf_norm)
-
+    print(datetime.datetime.now())
     file.close()
+    outbamfile.close()
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='periscopre: search for sgRNA reads in artic network SARS-CoV-2 sequencning data')
-    parser.add_argument('--bam', help='bam file',default="/mnt/shared/covid19seq/Shared/playground/trs/SHEF-D13D2_covid19-20200410-1586533428/SHEF-D13D2_covid19-20200410-1586533428_all_raw_pass.bam")
-    # parser.add_argument('--bam', help='bam file',default="/mnt/shared/covid19seq/Shared/playground/trs/test.sam")
-    parser.add_argument('--output_prefix',  help='prefix of the output file',default="/mnt/shared/covid19seq/Shared/playground/trs/test")
-    parser.add_argument('--sample', help='sample id',
-                        default="SHEF-D2BD9")
+    parser = argparse.ArgumentParser(description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data')
+    # parser.add_argument('--bam', help='bam file',default="resources/SHEF-C0E7B_covid19-20200421-1587480569_all_raw_pass.bam")
+    parser.add_argument('--bam', help='bam file',default="/mnt/shared/covid19seq/Shared/playground/trs/test.sam")
+    parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test2")
+    parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (55)',default="55")
+
+    parser.add_argument('--sample', help='sample id',default="SHEF-D2BD9")
 
     args = parser.parse_args()
 
 
-    main(args.bam,args.output_prefix,args.sample)
+    main(args)
 
 
 
