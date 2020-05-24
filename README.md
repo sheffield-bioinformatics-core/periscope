@@ -1,6 +1,6 @@
 # periscope
 
-[alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
+![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
 
 
