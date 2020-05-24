@@ -4,6 +4,7 @@ A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic networ
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
+# Installation
 
 # Pipeline overview
 * Read bam file
@@ -33,7 +34,7 @@ A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic networ
 #### tagged bam file
 - XS is the alignment score
 - XA is the amplicon number
-- XC is the asigned class (gDNA or sgDNA)
+- XC is the assigned class (gDNA or sgDNA)
 
-Why periscopre? SUB-genomic RNA, SUB-marine, periscope.
+Why periscope? SUB-genomic RNA, SUB-marine, periscope.
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>

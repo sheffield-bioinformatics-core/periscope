@@ -69,12 +69,21 @@ def main(args):
 
     inbamfile = pysam.AlignmentFile(args.bam, "rb")
     bam_header = inbamfile.header.copy().to_dict()
-    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wh", header=bam_header)
+    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
 
     orf_bed_object = open_bed('resources/orf_start.bed')
     amplicon_bed_object= open_bed('resources/artic_amplicons_V1.bed')
     primer_bed_object=read_bed_file('resources/artic_primers_V1.bed')
-    outfile = args.output_prefix + "_seq_search.tsv"
+
+    outfile_reads = args.output_prefix + "_periscope_reads.tsv"
+    outfile_counts = args.output_prefix + "_periscope_counts.tsv"
+
+    file_reads = open(outfile_reads, "w")
+    file_reads.write("sample\tread_id\tposition\torf\tscore\tclass\tamplicon\n")
+
+    file_counts = open(outfile_counts, "w")
+    file_counts.write("orf\traw_sgRNA\traw_gRNA\ttotal_reads\tnormalised_reads\n")
+
 
     # set up dictionary for normalisation
     # need to get all regions in bed and make into a dict
@@ -88,7 +97,6 @@ def main(args):
     # set up an expression summary - so per ORF?
     orf_counts={}
     for orf in orf_bed_object:
-        print(orf.name)
         orf_counts[orf.name]=0
 
      # set up an expression summary - so per ORF?
@@ -107,15 +115,14 @@ def main(args):
 
 
 
-    file = open(outfile, "w")
-    file.write("sample\tread_id\tposition\torf\tscore\tsequence\n")
-    print(datetime.datetime.now())
-
-
-
-
     for read in inbamfile:
 
+        # filter chimeras
+        if read.infer_query_length() > 800:
+            continue
+        # filter short fragments like primers
+        if read.infer_query_length() < 100:
+            continue
 
         if read.is_unmapped:
             # print("%s skipped as unmapped" %
@@ -128,6 +135,7 @@ def main(args):
 
         # print(read.query_name)
         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+        print(datetime.datetime.now())
         result = search_reads(read,search)
         # add orf location to result
         result["read_orf"] = check_start(orf_bed_object, read)
@@ -135,6 +143,7 @@ def main(args):
         # in the case of sgRNAs this code fails to find the correct primer for the + direction. This is actualy a clue that
         # this read is an sgRNA
         # get the left primer
+
         left_primer = find_primer(primer_bed_object,read.reference_start,'+')
         # get the left primer amplicon
         left_amplicon = int(left_primer[2]['Primer_ID'].split("_")[1])
@@ -142,40 +151,57 @@ def main(args):
         right_primer = find_primer(primer_bed_object, read.reference_end, '-')
         # get the right primer amplicon
         right_amplicon = int(right_primer[2]['Primer_ID'].split("_")[1])
+        print(datetime.datetime.now())
 
+        total_counts[right_amplicon]["total_reads"] += 1
+        # if the read starts in an orf
+        if result["read_orf"] != None:
+            # if the alignment score is high
+            # then it's a sgRNA
+            if result["align_score"] > int(args.score_cutoff):
+                read_class = "sgRNA"
+                total_counts[right_amplicon]["sg_reads"] += 1
+                orf_counts[result["read_orf"]] += 1
+            # if not then it's gRNA
+            else:
+                read_class = "gRNA"
+                total_counts[right_amplicon]["genomic_reads"] += 1
+        # if not it's a gRNA
+        else:
+            read_class="gRNA"
+            total_counts[right_amplicon]["genomic_reads"] += 1
 
         # (1, 1, {'chrom': 'MN908947.3', 'start': 21357, 'end': 21386, 'Primer_ID': 'nCoV-2019_71_LEFT', 'PoolName': 'nCoV-2019_1', 'direction': '+'})
-        # if the left and right ampicon match then it's genome
-        # todo: amplion 1 is genomic and contains leader, so here we need to do something else?
-        if left_amplicon == right_amplicon:
-            # print("%s ampilcon matches so genomic" %
-            #       (read.query_name), file=sys.stderr)
-            read_class = "gRNA"
-            total_counts[right_amplicon]["total_reads"]+=1
-            total_counts[right_amplicon]["genomic_reads"] += 1
-        # if the left and right amplicon do not match it's sub-genomic
-        elif left_amplicon != right_amplicon:
-            # print("%s ampilcon mismatch so likely sub-genomic" %
-            #       (read.query_name), file=sys.stderr)
-            read_class = "sgRNA"
-            total_counts[right_amplicon]["total_reads"] += 1
-            total_counts[right_amplicon]["sg_reads"] += 1
+        # # if the left and right ampicon match then it's genome
+        # # todo: amplion 1 is genomic and contains leader, so here we need to do something else?
+        # if left_amplicon == right_amplicon:
+        #     # print("%s ampilcon matches so genomic" %
+        #     #       (read.query_name), file=sys.stderr)
+        #     read_class = "gRNA"
+        #
+        #     total_counts[right_amplicon]["genomic_reads"] += 1
+        #
+        # # if the left and right amplicon do not match it's sub-genomic
+        # elif left_amplicon != right_amplicon:
+        #     # print("%s ampilcon mismatch so likely sub-genomic" %
+        #     #       (read.query_name), file=sys.stderr)
+        #     read_class = "sgRNA"
+        #     total_counts[right_amplicon]["total_reads"] += 1
+        #     total_counts[right_amplicon]["sg_reads"] += 1
 
         # ok so now, if read is an ORF, if leader is found, and artic is sgRNA then add to orf counts
-        if result["read_orf"] != None:
-            if result["align_score"] > int(args.score_cutoff):
-                orf_counts[result["read_orf"]]+=1
+        # if result["read_orf"] != None:
+        #     if result["align_score"] > int(args.score_cutoff):
+        #         orf_counts[result["read_orf"]]+=1
 
         set_tags(read,result["align_score"],right_amplicon,read_class)
 
-        # output = sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" + str(result["sequence"]) + "\n"
+
         output = args.sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)
-        # print(output)
         outbamfile.write(read)
-        file.write(output+"\n")
 
+        file_reads.write(output+"\n")
 
-    print(total_counts)
     # now do normalisation, for every orf get count
     for orf in orf_counts:
         # get the amplicon to which the ORF belongs
@@ -188,19 +214,30 @@ def main(args):
             orf_norm[orf]=orf_counts[orf]/total_for_amplicon
         else:
             orf_norm[orf] = 'NA'
-    print(orf_counts)
-    print(orf_norm)
-    print(datetime.datetime.now())
-    file.close()
+
+    # construct final counts file
+    for orf in orf_counts:
+        line=[]
+        line.append(orf)
+        line.append(str(orf_counts[orf]))
+        line.append(str(total_counts[orf_amplicons[orf]]['genomic_reads']))
+        line.append(str(total_counts[orf_amplicons[orf]]['total_reads']))
+        line.append(str(orf_norm[orf]))
+
+        file_counts.write("\t".join(line)+"\n")
+
+    file_reads.close()
+    file_counts.close()
     outbamfile.close()
+    pysam.index(args.output_prefix + "_periscope.bam")
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data')
-    # parser.add_argument('--bam', help='bam file',default="resources/SHEF-C0E7B_covid19-20200421-1587480569_all_raw_pass.bam")
-    parser.add_argument('--bam', help='bam file',default="/mnt/shared/covid19seq/Shared/playground/trs/test.sam")
-    parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test2")
-    parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (55)',default="55")
+    # parser.add_argument('--bam', help='bam file',default="resources/SHEF-D13D2_covid19-20200410-1586533428_all_raw_pass.bam")
+    parser.add_argument('--bam', help='bam file',default="resources/test.bam")
+    parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
+    parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (45)',default="45")
 
     parser.add_argument('--sample', help='sample id',default="SHEF-D2BD9")
 
