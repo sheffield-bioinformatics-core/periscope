@@ -6,7 +6,7 @@ import datetime
 from artic.align_trim import find_primer
 from artic.vcftagprimersites import read_bed_file
 import sys
-
+import os
 
 def check_start(bed_object,read):
     """
@@ -71,9 +71,10 @@ def main(args):
     bam_header = inbamfile.header.copy().to_dict()
     outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
 
-    orf_bed_object = open_bed('resources/orf_start.bed')
-    amplicon_bed_object= open_bed('resources/artic_amplicons_V1.bed')
-    primer_bed_object=read_bed_file('resources/artic_primers_V1.bed')
+    dir=os.path.dirname(__file__)
+    orf_bed_object = open_bed(os.path.join(dir,'resources/orf_start.bed'))
+    amplicon_bed_object= open_bed(os.path.join(dir,'resources/artic_amplicons_V1.bed'))
+    primer_bed_object=read_bed_file(os.path.join(dir,'resources/artic_primers_V1.bed'))
 
     outfile_reads = args.output_prefix + "_periscope_reads.tsv"
     outfile_counts = args.output_prefix + "_periscope_counts.tsv"
@@ -82,7 +83,7 @@ def main(args):
     file_reads.write("sample\tread_id\tposition\torf\tscore\tclass\tamplicon\n")
 
     file_counts = open(outfile_counts, "w")
-    file_counts.write("orf\traw_sgRNA\traw_gRNA\ttotal_reads\tnormalised_reads\n")
+    file_counts.write("sample\torf\traw_sgRNA\traw_gRNA\ttotal_reads\tnormalised_reads\n")
 
 
     # set up dictionary for normalisation
@@ -218,6 +219,7 @@ def main(args):
     # construct final counts file
     for orf in orf_counts:
         line=[]
+        line.append(args.sample)
         line.append(orf)
         line.append(str(orf_counts[orf]))
         line.append(str(total_counts[orf_amplicons[orf]]['genomic_reads']))
