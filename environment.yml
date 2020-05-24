@@ -1,0 +1,9 @@
+name: periscope
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - git+https://github.com/artic-network/fieldbioinformatics.git
