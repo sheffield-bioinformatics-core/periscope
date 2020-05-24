@@ -4,6 +4,9 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - pysam
+  - biopython
+  - pybedtools
   - pip
   - pip:
     - git+https://github.com/artic-network/fieldbioinformatics.git
