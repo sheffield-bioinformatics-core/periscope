@@ -1,6 +1,6 @@
 # periscope
 
-[logo](https://image.flaticon.com/icons/svg/85/85078.svg)
+[alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
 
 
