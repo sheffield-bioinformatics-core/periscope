@@ -7,6 +7,15 @@ A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic networ
 # Installation
 
 # Pipeline overview
+## Pre-Processing
+
+* Collect demutiplexed pass fastqs
+* Remap RAW artic protocol reads
+
+### Biased approach
+* Extract reads that cover ORF starts (this also makes it much quicker)
+
+## Counting
 * Read bam file
 * Assign amplicon to read (using artic align_trim.py)
 * Search for leader sequence in read to classify into sgRNA or gRNA
