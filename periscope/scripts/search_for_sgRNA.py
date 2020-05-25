@@ -84,7 +84,7 @@ def main(args):
     outfile_counts = args.output_prefix + "_periscope_counts.tsv"
 
     file_reads = open(outfile_reads, "w")
-    file_reads.write("sample\tread_id\tposition\torf\tscore\tclass\tamplicon\n")
+    file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
     file_counts = open(outfile_counts, "w")
     file_counts.write("sample\torf\traw_sgRNA\traw_gRNA\ttotal_reads\tnormalised_reads\n")
@@ -123,10 +123,10 @@ def main(args):
     for read in inbamfile:
 
         # filter chimeras
-        if read.infer_query_length() > 800:
+        if len(read.seq) > 800:
             continue
         # filter short fragments like primers
-        if read.infer_query_length() < 100:
+        if len(read.seq) < 100:
             continue
 
         if read.is_unmapped:
@@ -140,7 +140,7 @@ def main(args):
 
         # print(read.query_name)
         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-        print(datetime.datetime.now())
+        # print(datetime.datetime.now())
         result = search_reads(read,search)
         # add orf location to result
         result["read_orf"] = check_start(orf_bed_object, read)
@@ -202,7 +202,7 @@ def main(args):
         set_tags(read,result["align_score"],right_amplicon,read_class)
 
 
-        output = args.sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)
+        output = args.sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) +"\t" + str(len(read.seq)) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)
         outbamfile.write(read)
 
         file_reads.write(output+"\n")

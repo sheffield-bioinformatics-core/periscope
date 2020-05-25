@@ -7,16 +7,31 @@ A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic networ
 # Requirements
 periscope runs on MacOS and Linux. 
 
-Some version of conda, we use Miniconda3. Can be downloaded from here
 
-Your query fasta file
-Install pangolin
+* conda
+* Your raw fastq files from the artic protocol
+* Install periscope
 
 # Installation
-1. git clone https://github.com/sheffield-bioinformatics-core/periscope.git && cd periscope
-2. conda env create -f environment.yml
-3. conda activate periscope
-4. python setup.py install or pip install .
+```
+git clone https://github.com/sheffield-bioinformatics-core/periscope.git && cd periscope
+conda env create -f environment.yml
+conda activate periscope
+python setup.py install .
+```
+
+# Execution
+```
+conda activate periscope
+
+periscope \
+    --fastq-dir <PATH_TO_DEMUXED_FASTQ> \
+    --output-prefix <PATH_TO_OUTPUT> \
+    --sample <SAMPLE_NAME> \
+    --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
+    --score_cutoff <ALIGNMENT_CUTOFF_FOR_sgRNA> \
+    --threads <THREADS_FOR_MAPPING>
+```
 
 # Pipeline overview
 ## Pre-Processing
