@@ -4,7 +4,19 @@ A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic networ
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
+# Requirements
+periscope runs on MacOS and Linux. 
+
+Some version of conda, we use Miniconda3. Can be downloaded from here
+
+Your query fasta file
+Install pangolin
+
 # Installation
+1. git clone https://github.com/sheffield-bioinformatics-core/periscope.git && cd periscope
+2. conda env create -f environment.yml
+3. conda activate periscope
+4. python setup.py install or pip install .
 
 # Pipeline overview
 ## Pre-Processing
