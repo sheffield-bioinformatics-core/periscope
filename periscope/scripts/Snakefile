@@ -37,7 +37,7 @@ rule align:
     output:
        expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
     params:
-        reference = '/mnt/shared/bioinformatics_core1/Shared/software/artic-ncov2019/primer_schemes/nCoV-2019/V1/nCoV-2019.reference.fasta',
+        reference = expand("{resources_dir}/{reference_fasta}",resources_dir=config.get("resources_dir"),reference_fasta=config.get("reference_fasta")),
         threads = config.get("threads")
     shell:
         "minimap2 -ax map-ont -k 15 -t {params.threads} {params.reference} {input.merged_fastq} | samtools sort - | samtools view -bh - > {output}"
