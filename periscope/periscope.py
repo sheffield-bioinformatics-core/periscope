@@ -34,17 +34,24 @@ def main():
     else:
         print("Found the snakefile")
 
+    version = args.artic_primers.upper()
+    if version not in ["V1","V2","V3"]:
+        exit(1)
+    else:
+        amplicons_bed="artic_amplicons_{}.bed".format(version)
+        primers_bed="artic_primers_{}.bed".format(version)
+
     config = {
         "fastq_dir": args.fastq_dir,
         "output_prefix": args.output_prefix,
         "scripts_dir":scripts_dir,
         "resources_dir":args.resources,
-        "amplicon_bed": "artic_amplicons_V1.bed",
-        "primer_bed": "artic_primers_V1.bed",
+        "amplicon_bed": amplicons_bed,
+        "primer_bed": primers_bed,
         "orf_bed": "orf_start.bed",
         "score_cutoff": args.score_cutoff
     }
-
+    print(primers_bed)
     status = snakemake.snakemake(snakefile, printshellcmds=True,
                                  dryrun=args.dry_run, forceall=args.force, force_incomplete=True,
                                  config=config, cores=int(args.threads), lock=False
