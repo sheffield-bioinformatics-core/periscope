@@ -19,9 +19,11 @@ def check_start(bed_object,read):
     :param read: pysam read object
     :return: the orf
     """
-    read_feature = BedTool(read.reference_name+"\t"+str(read.pos)+"\t"+str(read.pos),from_string=True)
-    intersect=bed_object.intersect(read_feature)
+
+    # reads with a pos of 0 make this fail so puting in try except works
     try:
+        read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
+        intersect = bed_object.intersect(read_feature)
         orf=intersect[0].name
         if len(intersect) > 1:
             print("odd")
