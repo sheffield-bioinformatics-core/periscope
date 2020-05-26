@@ -212,11 +212,11 @@ def main(args):
         # get the amplicon to which the ORF belongs
         amplicon = orf_amplicons[orf]
         # get the total reads for that amplicon
-        total_for_amplicon = total_counts[amplicon]["total_reads"]
+        total_gRNA = total_counts[amplicon]["genomic_reads"]
         # exclude 0 counts
-        if total_for_amplicon != 0:
+        if total_gRNA != 0:
             # divide orf sgRNA count by the total reads for that amplicon
-            orf_norm[orf]=orf_counts[orf]/total_for_amplicon
+            orf_norm[orf]=orf_counts[orf]/total_gRNA
         else:
             orf_norm[orf] = 'NA'
 
