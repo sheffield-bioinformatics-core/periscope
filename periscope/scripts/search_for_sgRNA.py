@@ -59,11 +59,12 @@ def open_bed(bed):
     bed_object = BedTool(bed)
     return bed_object
 
-def set_tags(read,score,amplicon,read_class):
+def set_tags(read,score,amplicon,read_class,orf):
 
     read.set_tag('XS',score)
     read.set_tag('XA',amplicon)
     read.set_tag('XC',read_class)
+    read.set_tag('XO', orf)
     read.set_tag('RG', read_class)
 
     return read
@@ -199,7 +200,7 @@ def main(args):
         #     if result["align_score"] > int(args.score_cutoff):
         #         orf_counts[result["read_orf"]]+=1
 
-        set_tags(read,result["align_score"],right_amplicon,read_class)
+        set_tags(read,result["align_score"],right_amplicon,read_class,result["read_orf"])
 
 
         output = args.sample+"\t"+result["read_id"] + "\t" + str(result["read_position"]) +"\t" + str(len(read.seq)) + "\t" + str(result["read_orf"]) + "\t" + str(result["align_score"])+ "\t" +read_class+ "\t" + str(right_amplicon)

@@ -50,7 +50,8 @@ def main():
         "primer_bed": primers_bed,
         "orf_bed": "orf_start.bed",
         "score_cutoff": args.score_cutoff,
-        "reference_fasta": 'nCoV-2019.reference.fasta'
+        "reference_fasta": 'nCoV-2019.reference.fasta',
+        "sample": args.sample
     }
     print(primers_bed)
     status = snakemake.snakemake(snakefile, printshellcmds=True,
