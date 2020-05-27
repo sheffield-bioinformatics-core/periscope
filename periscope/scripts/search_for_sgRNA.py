@@ -125,6 +125,9 @@ def main(args):
 
     for read in inbamfile:
 
+        # for some reason the odd read has no sequence
+        if read.seq != None:
+            continue
         # filter chimeras
         if len(read.seq) > 800:
             continue

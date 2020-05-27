@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (45)',default=45)
     parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used',
                         default="V1")
-    parser.add_argument('--threads', dest='threads', help='Cut-off for alignment score of leader (45)',
+    parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - whereever you cloned periscope into")
     parser.add_argument('-n', '--dry-run', action='store_true', help="perform a scnakemake dryrun")
@@ -22,6 +22,8 @@ def main():
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
 
     args = parser.parse_args()
+
+    # check if fastq_dir exists
 
     # run snakemake pipeline 1st
     dir = os.path.join(os.path.dirname(__file__))
@@ -51,7 +53,8 @@ def main():
         "orf_bed": "orf_start.bed",
         "score_cutoff": args.score_cutoff,
         "reference_fasta": 'nCoV-2019.reference.fasta',
-        "sample": args.sample
+        "sample": args.sample,
+        "threads": args.threads
     }
     print(primers_bed)
     status = snakemake.snakemake(snakefile, printshellcmds=True,
