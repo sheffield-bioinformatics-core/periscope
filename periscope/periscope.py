@@ -17,7 +17,8 @@ def main():
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - whereever you cloned periscope into")
-    parser.add_argument('-n', '--dry-run', action='store_true', help="perform a scnakemake dryrun")
+    parser.add_argument('-d', '--dry-run', action='store_true', help="perform a scnakemake dryrun")
+    parser.add_argument('-n', '--novel', action='store_true', help="don't restrict to known ORF sites")
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
 
@@ -29,7 +30,7 @@ def main():
     dir = os.path.join(os.path.dirname(__file__))
     scripts_dir= os.path.join(dir, 'scripts')
     resources_dir = os.path.join(dir, 'resources')
-    snakefile = os.path.join(scripts_dir, 'Snakefile')
+
     if not os.path.exists(snakefile):
         sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
         sys.exit(-1)
@@ -57,6 +58,12 @@ def main():
         "threads": args.threads
     }
     print(primers_bed)
+
+    if args.novel:
+        snakefile = os.path.join(scripts_dir, 'Snakefile')
+    else:
+        snakefile = os.path.join(scripts_dir, 'SnakefileN')
+
     status = snakemake.snakemake(snakefile, printshellcmds=True,
                                  dryrun=args.dry_run, forceall=args.force, force_incomplete=True,
                                  config=config, cores=int(args.threads), lock=False
