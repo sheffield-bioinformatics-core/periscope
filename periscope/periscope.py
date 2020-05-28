@@ -17,32 +17,36 @@ def main():
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - whereever you cloned periscope into")
-    parser.add_argument('-d', '--dry-run', action='store_true', help="perform a scnakemake dryrun")
+    parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
     parser.add_argument('-n', '--novel', action='store_true', help="don't restrict to known ORF sites")
+    parser.add_argument('--max-read-length', dest='max_read_length', help="filter reads that have a length above this value (900)",default=900)
+    parser.add_argument('--min-read-length', dest='min_read_length', help="filter reads that have a length below this value (200)",default=200)
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
 
     args = parser.parse_args()
 
     # check if fastq_dir exists
+    if not os.path.exists(args.fastq_dir):
+        print("%s fastq directory must exist" % (args.fastq_dir), file=sys.stderr)
+        exit(1)
 
-    # run snakemake pipeline 1st
-    dir = os.path.join(os.path.dirname(__file__))
-    scripts_dir= os.path.join(dir, 'scripts')
-    resources_dir = os.path.join(dir, 'resources')
-
-    if not os.path.exists(snakefile):
-        sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
-        sys.exit(-1)
-    else:
-        print("Found the snakefile")
-
+    # check if version number is corect
     version = args.artic_primers.upper()
-    if version not in ["V1","V2","V3"]:
+    if version not in ["V1", "V2", "V3"]:
+        print("%s artic primer version incorrect" % (args.version), file=sys.stderr)
         exit(1)
     else:
         amplicons_bed="artic_amplicons_{}.bed".format(version)
         primers_bed="artic_primers_{}.bed".format(version)
+
+
+    # run snakemake pipeline 1st
+    dir = os.path.join(os.path.dirname(__file__))
+    scripts_dir= os.path.join(dir, 'scripts')
+
+
+
 
     config = {
         "fastq_dir": args.fastq_dir,
@@ -55,7 +59,9 @@ def main():
         "score_cutoff": args.score_cutoff,
         "reference_fasta": 'nCoV-2019.reference.fasta',
         "sample": args.sample,
-        "threads": args.threads
+        "threads": args.threads,
+        "min_read_length": args.min_read_length,
+        "max_read_length": args.max_read_length
     }
     print(primers_bed)
 
@@ -63,6 +69,12 @@ def main():
         snakefile = os.path.join(scripts_dir, 'Snakefile')
     else:
         snakefile = os.path.join(scripts_dir, 'SnakefileN')
+
+    if not os.path.exists(snakefile):
+        sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
+        sys.exit(-1)
+    else:
+        print("Found the snakefile")
 
     status = snakemake.snakemake(snakefile, printshellcmds=True,
                                  dryrun=args.dry_run, forceall=args.force, force_incomplete=True,

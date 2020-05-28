@@ -17,7 +17,7 @@ periscope runs on MacOS and Linux.
 git clone https://github.com/sheffield-bioinformatics-core/periscope.git && cd periscope
 conda env create -f environment.yml
 conda activate periscope
-python setup.py install .
+python setup.py install
 ```
 
 # Execution
@@ -65,7 +65,7 @@ periscope \
 - raw count of putative sgRNA
 - genomic reads for the respective amplicon
 - total reads for the respective amplicon
-- normalised could of putaive sgRNA
+- normalised count of putaive sgRNA (sgRNA/gRNA)
 
 #### tagged bam file
 - XS is the alignment score

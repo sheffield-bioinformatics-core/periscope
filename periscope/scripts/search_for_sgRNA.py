@@ -253,6 +253,10 @@ if __name__ == '__main__':
     parser.add_argument('--primer-bed', dest='primer_bed', help='Cut-off for alignment score of leader (45)')
     parser.add_argument('--amplicon-bed', dest='amplicon_bed', help='Cut-off for alignment score of leader (45)')
     parser.add_argument('--sample', help='sample id',default="SHEF-D2BD9")
+    parser.add_argument('--max-read-length', dest='max_read_length', help="don't restrict to known ORF sites",
+                        default=900)
+    parser.add_argument('--min-read-length', dest='min_read_length', help="don't restrict to known ORF sites",
+                        default=200)
 
     args = parser.parse_args()
     print(args.score_cutoff)

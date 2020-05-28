@@ -81,13 +81,15 @@ rule periscope:
     params:
         output_prefix = config.get("output_prefix"),
         score_cutoff = config.get("score_cutoff"),
+        max_read_length = config.get("max_read_length"),
+        min_read_length = config.get("min_read_length"),
         sample = config.get("sample"),
         search = expand("{scripts_dir}/search_for_sgRNA.py",scripts_dir=config.get("scripts_dir")),
         orf_bed = expand("{resources_dir}/{orf_bed}",resources_dir=config.get("resources_dir"),orf_bed=config.get("orf_bed")),
         primer_bed = expand("{resources_dir}/{primer_bed}",resources_dir=config.get("resources_dir"),primer_bed=config.get("primer_bed")),
         amplicon_bed =expand("{resources_dir}/{amplicon_bed}",resources_dir=config.get("resources_dir"),amplicon_bed=config.get("amplicon_bed"))
     shell:
-        "python {params.search} --bam {input.bam} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed}"
+        "python {params.search} --bam {input.bam} --min-read-length {params.min_read_length} --max-read-length {params.max_read_length} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed}"
 
 
 rule index_periscope_bam:
