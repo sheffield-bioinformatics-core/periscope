@@ -18,7 +18,7 @@ def main():
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - whereever you cloned periscope into")
     parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
-    parser.add_argument('-n', '--novel', action='store_true', help="don't restrict to known ORF sites")
+    parser.add_argument('-n', '--novel',dest='novel', action='store_true', help="don't restrict to known ORF sites",default=False)
     parser.add_argument('--max-read-length', dest='max_read_length', help="filter reads that have a length above this value (900)",default=900)
     parser.add_argument('--min-read-length', dest='min_read_length', help="filter reads that have a length below this value (200)",default=200)
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
@@ -65,11 +65,13 @@ def main():
     }
     print(primers_bed)
 
-    if args.novel:
-        snakefile = os.path.join(scripts_dir, 'Snakefile')
-    else:
+    if args.novel == True:
+        print("here")
         snakefile = os.path.join(scripts_dir, 'SnakefileN')
-
+    else:
+        print("this")
+        snakefile = os.path.join(scripts_dir, 'Snakefile')
+    print(snakefile)
     if not os.path.exists(snakefile):
         sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
         sys.exit(-1)
