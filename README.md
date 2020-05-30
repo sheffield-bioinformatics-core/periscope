@@ -1,6 +1,7 @@
 # periscope
 
 A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic network amplicon sequencing data.
+Initial classification of reads into sub-genomic or not based on https://www.biorxiv.org/content/10.1101/2020.04.10.029454v1.abstract
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
@@ -71,6 +72,7 @@ periscope \
 - XS is the alignment score
 - XA is the amplicon number
 - XC is the assigned class (gDNA or sgDNA)
+- XO is the orf assigned
 
 Why periscope? SUB-genomic RNA, SUB-marine, periscope.
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
