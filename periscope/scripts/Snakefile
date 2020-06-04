@@ -9,11 +9,13 @@ rule all:
         expand("{output_prefix}.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}.bam.bai",output_prefix=config.get("output_prefix")),
         # ORF only bam
-        expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix")),
+        # expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix")),
         # counts of read types
         expand("{output_prefix}_periscope_counts.tsv",output_prefix=config.get("output_prefix")),
         # read list
         expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix")),
+         # amplicon list
+        expand("{output_prefix}_periscope_amplicons.tsv",output_prefix=config.get("output_prefix")),
         # tagged bam
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix")),
@@ -51,33 +53,34 @@ rule index:
     shell:
         "samtools index {input.bam}"
 
-# subset bam
-rule subset_bam:
-    input:
-        bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
-    output:
-        expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
-    params:
-        bed = expand("{resources_dir}/orf_start.bed",resources_dir=config.get("resources_dir"))
-    shell:
-        "bedtools intersect -a {input.bam} -b {params.bed}  > {output}"
-
-rule index_orf_bam:
-    input:
-        orf_bam = expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
-    output:
-        orf_bai = expand("{output_prefix}_orfs_only.bam.bai",output_prefix=config.get("output_prefix"))
-    shell:
-        "samtools index {input.orf_bam}"
+# # subset bam
+# rule subset_bam:
+#     input:
+#         bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
+#     output:
+#         expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
+#     params:
+#         bed = expand("{resources_dir}/{interest_bed}",resources_dir=config.get("resources_dir"),interest_bed=config.get("interest_bed"))
+#     shell:
+#         "bedtools intersect -a {input.bam} -b {params.bed}  > {output}"
+#
+# rule index_orf_bam:
+#     input:
+#         orf_bam = expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
+#     output:
+#         orf_bai = expand("{output_prefix}_orfs_only.bam.bai",output_prefix=config.get("output_prefix"))
+#     shell:
+#         "samtools index {input.orf_bam}"
 
 #run periscope
 rule periscope:
     input:
-        bam = expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
+        bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
     output:
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.tsv",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix"))
+        expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix")),
+        expand("{output_prefix}_periscope_amplicons.tsv",output_prefix=config.get("output_prefix"))
     params:
         output_prefix = config.get("output_prefix"),
         score_cutoff = config.get("score_cutoff"),

@@ -73,6 +73,16 @@ def set_tags(read,score,amplicon,read_class,orf):
 
     return read
 
+def setup_counts(primer_bed_object):
+    # set up dictionary for normalisation
+    # need to get all regions in bed and make into a dict
+    # { 71: { total_reads: x, genomic_reads: y, sg_reads: {orf:z,orf2:k},'normalised_sgRNA': {orf:i,orf2:t} } }
+    total_counts = {}
+    for primer in primer_bed_object:
+        amplicon = int(primer["Primer_ID"].split("_")[1])
+        if amplicon not in total_counts:
+            total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'genomic_reads': 0, 'sg_reads': {},
+                                      'normalised_sgRNA': {}, 'normalised_gRNA': 0}
 
 def main(args):
 
@@ -82,6 +92,10 @@ def main(args):
     bam_header = inbamfile.header.copy().to_dict()
     # open output bam with the header we just got
     outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
+
+    # get mapped reads
+    print("hello")
+    mapped_reads = pysam.idxstats(args.bam).split("\n")[0].split("\t")[2]
 
     dir=os.path.dirname(__file__)
     # open the orfs bed file
@@ -94,42 +108,42 @@ def main(args):
     outfile_reads = args.output_prefix + "_periscope_reads.tsv"
     # set the output counts file name
     outfile_counts = args.output_prefix + "_periscope_counts.tsv"
+    # set the output amplcion file name
+    outfile_amplicons = args.output_prefix + "_periscope_amplicons.tsv"
+
 
     # add headers to these files
     file_reads = open(outfile_reads, "w")
     file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
-    # set up dictionary for normalisation
-    # need to get all regions in bed and make into a dict
-    # { 71: { total_reads: x, genomic_reads: y, sg_reads: z } }
-    total_counts= {}
-    for primer in primer_bed_object:
-        amplicon = int(primer["Primer_ID"].split("_")[1])
-        if amplicon not in total_counts:
-            total_counts[amplicon] = {'total_reads': 0, 'genomic_reads': 0, 'sg_reads': 0}
+    total_counts = setup_counts(primer_bed_object)
 
-    # set up an expression summary - so per ORF?
-    orf_counts={}
-    for orf in orf_bed_object:
-        orf_counts[orf.name]=0
-
-    # set up an expression summary but for normalisation - so per ORF?
-    orf_norm = {}
-    for orf in orf_bed_object:
-        # print(orf.name)
-        orf_norm[orf.name] = 0
 
     # get amplicon for each ORF
     orf_amplicons={}
     # we use pybedtools intersect here to intersect between the orf starts and the artic amplicons
     # in the case of E which actually overlaps two amplicons this overwirtes the entry for the 1st
     # E isn't far enough from the right of the 1st amplicon - 90bp and so we don't get sgRNAs from this amplicon
+    # if amplcions hit pool two then they need the current amplicon and the next amplicon
     intersect = orf_bed_object.intersect(amplicon_bed_object,loj=True)
     for orf in intersect:
         print(orf)
         orf_name = orf[3]
         amplicon = int(orf[7].split("_")[1])
-        orf_amplicons[orf_name]=amplicon
+        if orf_name not in orf_amplicons:
+            orf_amplicons[orf_name] = []
+
+
+        if (amplicon % 2) == 0:
+            # amplicon is even so you need the next amplicon too
+            if amplicon not in orf_amplicons[orf_name]:
+                orf_amplicons[orf_name].append(amplicon)
+                if amplicon !=98:
+                    orf_amplicons[orf_name].append(amplicon+1)
+        else:
+            if amplicon not in orf_amplicons[orf_name]:
+                orf_amplicons[orf_name].append(amplicon)
+
     print(orf_amplicons)
 
     # for every read let's decide if it's sgRNA or not
@@ -142,15 +156,15 @@ def main(args):
                   (read.query_name), file=sys.stderr)
             continue
         # filter chimeras
-        if len(read.seq) > args.max_read_length:
-            print("%s skipped as too long" %
-                  (read.query_name), file=sys.stderr)
-            continue
-        # filter short fragments like primers
-        if len(read.seq) < args.min_read_length:
-            print("%s skipped as too short:" %
-                  (read.query_name), file=sys.stderr)
-            continue
+        # if len(read.seq) > args.max_read_length:
+        #     print("%s skipped as too long" %
+        #           (read.query_name), file=sys.stderr)
+        #     continue
+        # # filter short fragments like primers
+        # if len(read.seq) < args.min_read_length:
+        #     print("%s skipped as too short:" %
+        #           (read.query_name), file=sys.stderr)
+        #     continue
         # filter unmapped
         if read.is_unmapped:
             print("%s skipped as unmapped" %
@@ -185,25 +199,28 @@ def main(args):
         # add to the total count of the right amplicon
         total_counts[right_amplicon]["total_reads"] += 1
 
-        # if the read starts in an orf
-        if result["read_orf"] != None:
+        # if the read starts in an orf - let's just use all reads for now?
+        # if result["read_orf"] != None:
             # if the alignment score is high
             # then it's a sgRNA
-            if result["align_score"] > int(args.score_cutoff):
-                # assign the read class
-                read_class = "sgRNA"
-                # add one to the total count for the right amplicon for sgRNA reads only
-                total_counts[right_amplicon]["sg_reads"] += 1
-                # add one to the orf count (To be honest we probably don't need this second dictionary)
-                orf_counts[result["read_orf"]] += 1
-            # if not then it's gRNA
-            else:
-                read_class = "gRNA"
-                # add one to the total count for the right amplicon for rRNA reads only
-                total_counts[right_amplicon]["genomic_reads"] += 1
-        # if not it's a gRNA
+        if result["align_score"] > int(args.score_cutoff):
+            # assign the read class
+            read_class = "sgRNA"
+            # add one to the total count for the right amplicon for sgRNA reads only
+            total_counts[right_amplicon]["sg_reads"][result["read_orf"]] += 1
+            # attempt to capture novel:
+            if result["read_orf"] is None:
+                result["read_orf"] = "novel_" + str(read.pos)
+            # if it has been an assigned an orf add to the total_counts
+            if result["read_orf"] not in total_counts[right_amplicon]["sg_reads"]:
+                total_counts[right_amplicon]["sg_reads"][result["read_orf"]] = 0
+
+
+
+        # if not then it's gRNA
         else:
-            read_class="gRNA"
+            read_class = "gRNA"
+            # add one to the total count for the right amplicon for rRNA reads only
             total_counts[right_amplicon]["genomic_reads"] += 1
 
         # set the tags of the read for the bam file
@@ -223,30 +240,96 @@ def main(args):
     pysam.index(args.output_prefix + "_periscope.bam")
 
     # now do normalisation, for every orf get count
-    for orf in orf_counts:
-        # get the amplicon to which the ORF belongs
-        amplicon = orf_amplicons[orf]
-        # get the total reads for that amplicon
-        total_gRNA = total_counts[amplicon]["genomic_reads"]
-        # exclude 0 counts
-        if total_gRNA != 0:
-            # divide orf sgRNA count by the total reads for that amplicon
-            orf_norm[orf]=orf_counts[orf]/total_gRNA
+    # some sgRNAs hit pool 2 which doesn't have the leader primer
+    # these have two sets of evidence, sgRNA reads resulting from priming within the amplicon from 3' with no 5' primer
+    # the 2nd is priming in pool 1 from primer1 to the 3' end of the 3' most pool 1 amplicon
+    # we have this data in total counts, as each amplicon has counts of sgRNA and counts of g, we just need to be sure to use both
+
+    print(total_counts)
+    result = {}
+
+
+    for amplicon in total_counts:
+
+        if total_counts[amplicon]["genomic_reads"] > 0:
+            for orf in total_counts[amplicon]["sg_reads"]:
+
+
+                if orf not in orf_amplicons:
+                    orf_amplicons[orf]=[amplicon]
+
+                total_counts[amplicon]["normalised_sgRNA"][orf] = total_counts[amplicon]["sg_reads"][orf] / total_counts[amplicon]["genomic_reads"]
+
+
+                total_counts[amplicon]["normalised_gRNA"] = total_counts[amplicon]["genomic_reads"] / int(mapped_reads)
+
+    file_amplicons = open(outfile_amplicons, "w")
+    file_amplicons.write("sample\tamplicon\traw_gRNA\ttotal_reads\torf\traw_sgRNA\tnormalised_sgRNA\tnormalised_gRNA\n")
+    for amplicon in total_counts:
+
+        if len(total_counts[amplicon]["sg_reads"])>0:
+            for orf in total_counts[amplicon]["sg_reads"]:
+                line = []
+                line.append(args.sample)
+                line.append(str(amplicon))
+                line.append(str(total_counts[amplicon]["genomic_reads"]))
+                line.append(str(total_counts[amplicon]["total_reads"]))
+                line.append(str(orf))
+                line.append(str(total_counts[amplicon]["sg_reads"][orf]))
+                line.append(str(total_counts[amplicon]["normalised_sgRNA"][orf]))
+
+                line.append(str(total_counts[amplicon]["normalised_gRNA"]))
+                file_amplicons.write("\t".join(line) + "\n")
+
         else:
-            orf_norm[orf] = 'NA'
+            line = []
+            line.append(args.sample)
+            line.append(str(amplicon))
+            line.append(str(total_counts[amplicon]["genomic_reads"]))
+            line.append(str(total_counts[amplicon]["total_reads"]))
+            line.append(str("NA"))
+            line.append(str(0))
+            line.append(str(0))
+            line.append(str(total_counts[amplicon]["normalised_gRNA"]))
+            file_amplicons.write("\t".join(line) + "\n")
+
+    file_amplicons.close()
+
+    for orf in orf_amplicons:
+        print(orf)
+        result[orf] = {
+            "sg_reads":0,
+            "genomic_reads":0,
+            "normalised_sgRNA":0,
+            "total_reads":0,
+            "normalised_gRNA":0
+        }
+        for amplicon in orf_amplicons[orf]:
+            print(amplicon)
+            print(result[orf])
+            if orf in total_counts[amplicon]["sg_reads"]:
+                result[orf]["sg_reads"]+=total_counts[amplicon]["sg_reads"][orf]
+                result[orf]["normalised_sgRNA"] += total_counts[amplicon]["normalised_sgRNA"][orf]
+            else:
+                result[orf]["sg_reads"]= 0
+                result[orf]["normalised_sgRNA"] = 0
+            result[orf]["genomic_reads"] += total_counts[amplicon]["genomic_reads"]
+            result[orf]["total_reads"] += total_counts[amplicon]["total_reads"]
+
+            result[orf]["normalised_gRNA"] += total_counts[amplicon]["normalised_gRNA"]
+
+
+
 
     # construct final counts file
     file_counts = open(outfile_counts, "w")
-    file_counts.write("sample\torf\traw_sgRNA\traw_gRNA\ttotal_reads\tnormalised_reads\n")
+    file_counts.write("sample\torf\tnormalised_sgRNA\n")
 
-    for orf in orf_counts:
+    for orf in result:
         line=[]
         line.append(args.sample)
-        line.append(orf)
-        line.append(str(orf_counts[orf]))
-        line.append(str(total_counts[orf_amplicons[orf]]['genomic_reads']))
-        line.append(str(total_counts[orf_amplicons[orf]]['total_reads']))
-        line.append(str(orf_norm[orf]))
+        line.append(str(orf))
+        line.append(str(result[orf]["normalised_sgRNA"]))
 
         file_counts.write("\t".join(line)+"\n")
 

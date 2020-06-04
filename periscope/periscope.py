@@ -39,6 +39,7 @@ def main():
     else:
         amplicons_bed="artic_amplicons_{}.bed".format(version)
         primers_bed="artic_primers_{}.bed".format(version)
+        interest_bed = "artic_amplicons_of_interest.bed"
 
 
     # run snakemake pipeline 1st
@@ -54,6 +55,7 @@ def main():
         "scripts_dir":scripts_dir,
         "resources_dir":args.resources,
         "amplicon_bed": amplicons_bed,
+        "interest_bed": interest_bed,
         "primer_bed": primers_bed,
         "orf_bed": "orf_start.bed",
         "score_cutoff": args.score_cutoff,
