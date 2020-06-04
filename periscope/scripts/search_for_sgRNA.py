@@ -83,6 +83,7 @@ def setup_counts(primer_bed_object):
         if amplicon not in total_counts:
             total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'genomic_reads': 0, 'sg_reads': {},
                                       'normalised_sgRNA': {}, 'normalised_gRNA': 0}
+    return total_counts
 
 def main(args):
 
@@ -206,15 +207,17 @@ def main(args):
         if result["align_score"] > int(args.score_cutoff):
             # assign the read class
             read_class = "sgRNA"
-            # add one to the total count for the right amplicon for sgRNA reads only
-            total_counts[right_amplicon]["sg_reads"][result["read_orf"]] += 1
+            # # add one to the total count for the right amplicon for sgRNA reads only
+            # if result["read_orf"] not in total_counts[right_amplicon]["sg_reads"]:
+            #     total_counts[right_amplicon]["sg_reads"][result["read_orf"]] = 0
+            #
             # attempt to capture novel:
             if result["read_orf"] is None:
                 result["read_orf"] = "novel_" + str(read.pos)
             # if it has been an assigned an orf add to the total_counts
             if result["read_orf"] not in total_counts[right_amplicon]["sg_reads"]:
                 total_counts[right_amplicon]["sg_reads"][result["read_orf"]] = 0
-
+            total_counts[right_amplicon]["sg_reads"][result["read_orf"]] += 1
 
 
         # if not then it's gRNA
