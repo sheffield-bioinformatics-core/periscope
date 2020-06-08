@@ -298,6 +298,10 @@ def main(args):
 
     file_amplicons.close()
 
+
+
+    # TODO: this is not working properly? Missing ORF8 and ORF10 because they don't get classified if there is no sgRNA above?
+    # TODO: somtimes an ORF unexpecitidly is attributed to an amplicon
     for orf in orf_amplicons:
         print(orf)
         result[orf] = {
