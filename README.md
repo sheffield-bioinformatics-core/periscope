@@ -54,6 +54,7 @@ _Our median read count is ~250k and this will take around 25minutes_
 * Normalise a few ways
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/read_classification.png "periscope")<!-- .element height="10%" width="10%" -->
+*Figure 1. Read Classification Algorithm* 
 
 ## Normalisation
 
@@ -61,13 +62,13 @@ We have taken two approaches, a global normalisation based on mapped read counts
 
 * gRNA or sgRNA Per 100,000 mapped reads (gRPHT or sgRPHT)
     * We do this per amplicon and sum them in instances where multiple amplicons contribute to the final ORF count
-* sgRNA can be normalised to the gRNA from the same amplicon - sgRPTg (normalising for amplicon efficiency differences)
+* sgRNA can be normalised to per 1000 gRNA reads from the same amplicon - sgRPTg (normalising for amplicon efficiency differences)
     * There are things you need to note here:
         * multiple amplicons can contribute to reads which support the same sgRNA
         * we normalise on a per amplicon level and then sum these to get an overall normalised count
 
 
-### Outputs:
+## Outputs:
 
 #### a tab-delimited text file of 
 - sample
