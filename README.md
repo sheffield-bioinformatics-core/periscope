@@ -40,21 +40,32 @@ periscope \
 * Collect demutiplexed pass fastqs
 * Remap RAW artic protocol reads
 
-### Biased approach
-* Extract reads that cover ORF starts (this also makes it much quicker)
-
 ## Counting
 
 _This step takes roughly 1minute per 10k reads_
 _Our median read count is ~250k and this will take around 25minutes_
 
 * Read bam file
+* Filter unmapped and secondary alignments
 * Assign amplicon to read (using artic align_trim.py)
-* Search for leader sequence in read to classify into sgRNA or gRNA
-* Classify sgRNAs into ORFs based on start position
-* Normalise based on total read count per amplicon
+* Search for leader sequence
+* Assign read to ORF
+* Classify read (see Figure 1)
+* Normalise a few ways
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/read_classification.png "periscope")<!-- .element height="10%" width="10%" -->
+
+## Normalisation
+
+We have taken two approaches, a global normalisation based on mapped read counts or a local normalisation based on gRNA from the same amplicon.
+
+* gRNA or sgRNA Per 100,000 mapped reads (gRPHT or sgRPHT)
+    * We do this per amplicon and sum them in instances where multiple amplicons contribute to the final ORF count
+* sgRNA can be normalised to the gRNA from the same amplicon - sgRPTg (normalising for amplicon efficiency differences)
+    * There are things you need to note here:
+        * multiple amplicons can contribute to reads which support the same sgRNA
+        * we normalise on a per amplicon level and then sum these to get an overall normalised count
+
 
 ### Outputs:
 
