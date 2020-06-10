@@ -37,7 +37,7 @@ def amplicon_parser(amplicon_file):
 
 def main(args):
     count=0
-    orfs={"ORF1a": [1],"S" : [71],"ORF3a" : [84],"E" : [86,87],"M" : [87],"ORF6" : [89],"ORF7a" : [90,91],"ORF7b" : [91,92],"ORF8" : [92,93],"N" : [93],"N*" : [95],"ORF10" : [97,98]}
+    orfs={"ORF1a": [1],"S" : [71],"ORF3a" : [84],"E" : [86,87],"M" : [87],"ORF6" : [89],"ORF7a" : [90,91],"ORF7b" : [91],"ORF8" : [92,93],"N" : [93],"N*" : [95],"ORF10" : [97,98]}
     orfs_amplicons = {}
     for amplicon in amplicon_parser(args.amplicon_file):
         if amplicon.orf == "NA":

@@ -44,12 +44,17 @@ periscope \
 * Extract reads that cover ORF starts (this also makes it much quicker)
 
 ## Counting
+
+_This step takes roughly 1minute per 10k reads_
+_Our median read count is ~250k and this will take around 25minutes_
+
 * Read bam file
 * Assign amplicon to read (using artic align_trim.py)
 * Search for leader sequence in read to classify into sgRNA or gRNA
 * Classify sgRNAs into ORFs based on start position
-* Classy which amplicon an ORF can come from
 * Normalise based on total read count per amplicon
+
+![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/read_classification.png "periscope")<!-- .element height="10%" width="10%" -->
 
 ### Outputs:
 
