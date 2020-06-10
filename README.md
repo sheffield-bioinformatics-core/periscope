@@ -54,7 +54,7 @@ _Our median read count is ~250k and this will take around 25minutes_
 * Normalise a few ways
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/read_classification.png "periscope")<!-- .element height="10%" width="10%" -->
-*Figure 1. Read Classification Algorithm* 
+__Figure 1. Read Classification Algorithm__ 
 
 ## Normalisation
 
