@@ -153,6 +153,7 @@ truth = {
 # e8981b0c-21fe-4920-80e3-530197f3d15e  novel_20315   67  sgRNA   Novel sgRNA
 # 07b675cc-6b19-4ed4-9341-6576ad51957f  None    67  gRNA
 # 76aaf579-4754-4bbe-b001-4ac2d6f76533  novel_19548   65  gRNA    listed as novel, but on edge of amplicon
+# 1e0b6284-ec08-4451-b0fc-3f7f36e75b31 None    97  gRNA
 
 # TODO - I want some amplicon 86 reads that support E
 # TODO - I need some reads supporting 7a
@@ -164,12 +165,6 @@ from artic.vcftagprimersites import read_bed_file
 
 
 
-def test_class():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    for read in inbamfile:
-        new_read = PeriscopeRead(read)
-        print(new_read.read.query_name)
-
 
 
 
@@ -178,7 +173,7 @@ dirname = os.path.dirname(__file__)
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads("reads.sam")
-    assert mapped_reads == 19
+    assert mapped_reads == 22
 
 
 def test_check_start():

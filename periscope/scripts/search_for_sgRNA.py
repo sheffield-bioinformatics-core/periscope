@@ -214,18 +214,31 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon):
 
 
 def summarised_counts_per_orf(total_counts,orf_bed_object):
+    # TODO: would be nice if for ORFS even with 0 we get gRNA counts oututted
+    # TODO: need to output novel counts
+    # TODO: need to output novel counts
     result = {}
     for orf in orf_bed_object:
+
+
         if orf.name not in result:
             result[orf.name] = {}
             result[orf.name]["gRPHT"] = 0
             result[orf.name]["amplicons"] = []
+            result[orf.name]["gRNA_count"] = 0
+            for quality in ["LLQ", "LQ", "HQ"]:
+                result[orf.name]["sgRNA_" + quality + "_count"] = 0
+
         for amplicon in total_counts:
             if orf.name in total_counts[amplicon]["gRPHT"]:
                 result[orf.name]["gRPHT"] += total_counts[amplicon]["gRPHT"][orf.name]
                 result[orf.name]["amplicons"].append(str(amplicon))
+                result[orf.name]["gRNA_count"] += len(total_counts[amplicon]["gRNA"])
 
             for quality in ["LLQ", "LQ", "HQ"]:
+                if orf.name in total_counts[amplicon]["sgRNA_" + quality]:
+                    result[orf.name]["sgRNA_" + quality + "_count"] += len(total_counts[amplicon]["sgRNA_" + quality][orf.name])
+
                 for metric in ["sgRPHT", "sgRPTg"]:
                     qmetric = metric + "_" + quality
                     if qmetric not in result[orf.name]:
@@ -236,7 +249,7 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
 
 def output_summarised_counts(mapped_reads,result,outfile_counts):
     with open(outfile_counts,"w") as f:
-        header = ["sample", "orf", "mapped_reads", "amplicons", "gRHPT", "sgRPTg_HQ", "sgRPTg_LQ", "sgRPTg_LLQ",
+        header = ["sample", "orf", "mapped_reads", "amplicons","gRNA_count", "sgRNA_HQ_count", "sgRNA_LQ_count", "sgRNA_LLQ_count", "gRHPT", "sgRPTg_HQ", "sgRPTg_LQ", "sgRPTg_LLQ",
                   "sgRPTg_ALL", "sgRPHT_HQ", "sgRPHT_LQ", "sgRPHT_LLQ", "sgRPHT_ALL"]
         f.write(",".join(header)+"\n")
         for orf in result:
@@ -245,6 +258,11 @@ def output_summarised_counts(mapped_reads,result,outfile_counts):
             line.append(orf)
             line.append(str(mapped_reads))
             line.append("|".join(result[orf]["amplicons"]))
+            line.append(str(result[orf]["gRNA_count"]))
+            line.append(str(result[orf]["sgRNA_HQ_count"]))
+            line.append(str(result[orf]["sgRNA_LQ_count"]))
+            line.append(str(result[orf]["sgRNA_LLQ_count"]))
+
             line.append(str(result[orf]["gRPHT"]))
             line.append(str(result[orf]["sgRPTg_HQ"]))
             line.append(str(result[orf]["sgRPTg_LQ"]))
