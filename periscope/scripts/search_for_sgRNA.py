@@ -164,7 +164,7 @@ def setup_counts(primer_bed_object):
     return total_counts
 
 
-def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon):
+def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_bed_object):
     with open(outfile_amplicon, "w") as f:
         header = ["sample", "amplicon", "mapped_reads", "orf", "quality", "gRNA_count", "gRPTH", "sgRNA_count", "sgRPHT",
               "sgRPTg"]
@@ -209,8 +209,46 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon):
                     line.append(str(amplicon_orf_sgRPHT))
                     line.append(str(amplicon_orf_sgRPTg))
                     f.write(",".join(line)+"\n")
+
+            for quality in ["HQ", "LQ"]:
+                total_counts[amplicon]["nsgRPHT_" + quality] = {}
+                total_counts[amplicon]["nsgRPTg_" + quality] = {}
+                for orf in total_counts[amplicon]["nsgRNA_" + quality]:
+                    total_counts[amplicon]["gRPHT"][orf] = amplicon_gRPTH
+
+                    amplicon_orf_sgRNA_count = len(total_counts[amplicon]["nsgRNA_" + quality][orf])
+
+                    # normalised per 100k total mapped reads
+                    amplicon_orf_sgRPHT = amplicon_orf_sgRNA_count / (mapped_reads / 100000)
+
+                    total_counts[amplicon]["nsgRPHT_" + quality][orf] = amplicon_orf_sgRPHT
+
+                    # normalised per 1000 gRNA reads from this amplicon
+                    amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
+
+                    total_counts[amplicon]["nsgRPTg_" + quality][orf] = amplicon_orf_sgRPTg
+
+                    line = []
+                    line.append(args.sample)
+                    line.append(str(amplicon))
+                    line.append(str(mapped_reads))
+                    line.append(str(orf))
+                    line.append(str(quality))
+                    line.append(str(amplicon_gRNA_count))
+                    line.append(str(amplicon_gRPTH))
+                    line.append(str(amplicon_orf_sgRNA_count))
+                    line.append(str(amplicon_orf_sgRPHT))
+                    line.append(str(amplicon_orf_sgRPTg))
+                    f.write(",".join(line)+"\n")
+
+                    read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])-1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),
+                                           from_string=True)
+
+                    orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
+    for i in orf_bed_object:
+        print(i.name)
     f.close()
-    return total_counts
+    return total_counts,orf_bed_object
 
 
 def summarised_counts_per_orf(total_counts,orf_bed_object):
@@ -219,63 +257,110 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
     # TODO: need to output novel counts
     result = {}
     for orf in orf_bed_object:
-
-
+        print("here")
+        print(orf.name)
         if orf.name not in result:
             result[orf.name] = {}
             result[orf.name]["gRPHT"] = 0
             result[orf.name]["amplicons"] = []
             result[orf.name]["gRNA_count"] = 0
-            for quality in ["LLQ", "LQ", "HQ"]:
-                result[orf.name]["sgRNA_" + quality + "_count"] = 0
+            if "novel" in orf.name:
+                for quality in ["LQ", "HQ"]:
+                    result[orf.name]["nsgRNA_" + quality + "_count"] = 0
+            else:
+                for quality in ["LLQ", "LQ", "HQ"]:
+                    result[orf.name]["sgRNA_" + quality + "_count"] = 0
 
         for amplicon in total_counts:
             if orf.name in total_counts[amplicon]["gRPHT"]:
                 result[orf.name]["gRPHT"] += total_counts[amplicon]["gRPHT"][orf.name]
                 result[orf.name]["amplicons"].append(str(amplicon))
                 result[orf.name]["gRNA_count"] += len(total_counts[amplicon]["gRNA"])
+            if "novel" in orf.name:
+                print("YOYOY")
+                for quality in ["LQ", "HQ"]:
+                    if orf.name in total_counts[amplicon]["nsgRNA_" + quality]:
+                        result[orf.name]["nsgRNA_" + quality + "_count"] += len(
+                            total_counts[amplicon]["nsgRNA_" + quality][orf.name])
 
-            for quality in ["LLQ", "LQ", "HQ"]:
-                if orf.name in total_counts[amplicon]["sgRNA_" + quality]:
-                    result[orf.name]["sgRNA_" + quality + "_count"] += len(total_counts[amplicon]["sgRNA_" + quality][orf.name])
+                    for metric in ["nsgRPHT", "nsgRPTg"]:
+                        qmetric = metric + "_" + quality
+                        if qmetric not in result[orf.name]:
+                            result[orf.name][qmetric] = 0
+                        if orf.name in total_counts[amplicon][qmetric]:
+                            result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
 
-                for metric in ["sgRPHT", "sgRPTg"]:
-                    qmetric = metric + "_" + quality
-                    if qmetric not in result[orf.name]:
-                        result[orf.name][qmetric] = 0
-                    if orf.name in total_counts[amplicon][qmetric]:
-                        result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
+            else:
+                for quality in ["LLQ", "LQ", "HQ"]:
+                    if orf.name in total_counts[amplicon]["sgRNA_" + quality]:
+                        result[orf.name]["sgRNA_" + quality + "_count"] += len(total_counts[amplicon]["sgRNA_" + quality][orf.name])
+
+                    for metric in ["sgRPHT", "sgRPTg"]:
+                        qmetric = metric + "_" + quality
+                        if qmetric not in result[orf.name]:
+                            result[orf.name][qmetric] = 0
+                        if orf.name in total_counts[amplicon][qmetric]:
+                            result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
     return result
 
-def output_summarised_counts(mapped_reads,result,outfile_counts):
+def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel):
     with open(outfile_counts,"w") as f:
         header = ["sample", "orf", "mapped_reads", "amplicons","gRNA_count", "sgRNA_HQ_count", "sgRNA_LQ_count", "sgRNA_LLQ_count", "gRHPT", "sgRPTg_HQ", "sgRPTg_LQ", "sgRPTg_LLQ",
                   "sgRPTg_ALL", "sgRPHT_HQ", "sgRPHT_LQ", "sgRPHT_LLQ", "sgRPHT_ALL"]
         f.write(",".join(header)+"\n")
         for orf in result:
-            line = []
-            line.append(args.sample)
-            line.append(orf)
-            line.append(str(mapped_reads))
-            line.append("|".join(result[orf]["amplicons"]))
-            line.append(str(result[orf]["gRNA_count"]))
-            line.append(str(result[orf]["sgRNA_HQ_count"]))
-            line.append(str(result[orf]["sgRNA_LQ_count"]))
-            line.append(str(result[orf]["sgRNA_LLQ_count"]))
+            if "novel" not in orf:
+                line = []
+                line.append(args.sample)
+                line.append(orf)
+                line.append(str(mapped_reads))
+                line.append("|".join(result[orf]["amplicons"]))
+                line.append(str(result[orf]["gRNA_count"]))
+                line.append(str(result[orf]["sgRNA_HQ_count"]))
+                line.append(str(result[orf]["sgRNA_LQ_count"]))
+                line.append(str(result[orf]["sgRNA_LLQ_count"]))
 
-            line.append(str(result[orf]["gRPHT"]))
-            line.append(str(result[orf]["sgRPTg_HQ"]))
-            line.append(str(result[orf]["sgRPTg_LQ"]))
-            line.append(str(result[orf]["sgRPTg_LLQ"]))
-            sgRPTg_all = sum([result[orf]["sgRPTg_HQ"], result[orf]["sgRPTg_LQ"], result[orf]["sgRPTg_LLQ"]])
-            line.append(str(sgRPTg_all))
-            line.append(str(result[orf]["sgRPHT_HQ"]))
-            line.append(str(result[orf]["sgRPHT_LQ"]))
-            line.append(str(result[orf]["sgRPHT_LLQ"]))
-            sgRPHT_all = sum([result[orf]["sgRPHT_HQ"], result[orf]["sgRPHT_LQ"], result[orf]["sgRPHT_LLQ"]])
-            line.append(str(sgRPHT_all))
+                line.append(str(result[orf]["gRPHT"]))
+                line.append(str(result[orf]["sgRPTg_HQ"]))
+                line.append(str(result[orf]["sgRPTg_LQ"]))
+                line.append(str(result[orf]["sgRPTg_LLQ"]))
+                sgRPTg_all = sum([result[orf]["sgRPTg_HQ"], result[orf]["sgRPTg_LQ"], result[orf]["sgRPTg_LLQ"]])
+                line.append(str(sgRPTg_all))
+                line.append(str(result[orf]["sgRPHT_HQ"]))
+                line.append(str(result[orf]["sgRPHT_LQ"]))
+                line.append(str(result[orf]["sgRPHT_LLQ"]))
+                sgRPHT_all = sum([result[orf]["sgRPHT_HQ"], result[orf]["sgRPHT_LQ"], result[orf]["sgRPHT_LLQ"]])
+                line.append(str(sgRPHT_all))
 
-            f.write(",".join(line) + "\n")
+                f.write(",".join(line) + "\n")
+        f.close()
+    with open(outfile_counts_novel, "w") as f:
+        novel_header = ["sample", "orf", "mapped_reads", "amplicons", "gRNA_count", "nsgRNA_HQ_count", "nsgRNA_LQ_count",
+                        "gRHPT", "nsgRPTg_HQ", "nsgRPTg_LQ", "nsgRPTg_ALL", "nsgRPHT_HQ", "nsgRPHT_LQ", "nsgRPHT_ALL"]
+        f.write(",".join(novel_header) + "\n")
+        for orf in result:
+            if "novel" in orf:
+                print(orf)
+                line = []
+                line.append(args.sample)
+                line.append(orf)
+                line.append(str(mapped_reads))
+                line.append("|".join(result[orf]["amplicons"]))
+                line.append(str(result[orf]["gRNA_count"]))
+                line.append(str(result[orf]["nsgRNA_HQ_count"]))
+                line.append(str(result[orf]["nsgRNA_LQ_count"]))
+
+                line.append(str(result[orf]["gRPHT"]))
+                line.append(str(result[orf]["nsgRPTg_HQ"]))
+                line.append(str(result[orf]["nsgRPTg_LQ"]))
+                nsgRPTg_all = sum([result[orf]["nsgRPTg_HQ"], result[orf]["nsgRPTg_LQ"]])
+                line.append(str(nsgRPTg_all))
+                line.append(str(result[orf]["nsgRPHT_HQ"]))
+                line.append(str(result[orf]["nsgRPHT_LQ"]))
+                nsgRPHT_all = sum([result[orf]["nsgRPHT_HQ"], result[orf]["nsgRPHT_LQ"]])
+                line.append(str(nsgRPHT_all))
+
+                f.write(",".join(line) + "\n")
         f.close()
 
 
@@ -351,7 +436,7 @@ def main(args):
         # ok now add this info to a dictionary for later processing
         if "sgRNA" in read_class:
             if result["read_orf"] is None:
-                result["read_orf"] = str(read.pos)
+                result["read_orf"] = "novel_"+str(read.pos)
 
             if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
                 total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
@@ -371,14 +456,15 @@ def main(args):
 
     # go through each amplicon and do normalisations
     outfile_amplicons = args.output_prefix + "_periscope_amplicons.csv"
-    total_counts = calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicons)
-
+    total_counts,orf_bed_object = calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicons,orf_bed_object)
+    print(orf_bed_object)
     # summarise result into ORFs
     result = summarised_counts_per_orf(total_counts,orf_bed_object)
-
+    print(result)
     # output summarised counts
     outfile_counts = args.output_prefix + "_periscope_counts.csv"
-    output_summarised_counts(mapped_reads,result,outfile_counts)
+    outfile_counts_novel = args.output_prefix + "_periscope_novel_counts.csv"
+    output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel)
 
 
 if __name__ == '__main__':
