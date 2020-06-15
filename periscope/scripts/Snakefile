@@ -80,7 +80,8 @@ rule periscope:
     output:
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix"))
+        expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
+        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix"))
     params:
         output_prefix = config.get("output_prefix"),
         score_cutoff = config.get("score_cutoff"),
