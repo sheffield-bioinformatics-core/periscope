@@ -381,12 +381,12 @@ def main(args):
     # open the artic primer bed file
     primer_bed_object=read_bed_file(args.primer_bed)
     # set the output reads filename
-    outfile_reads = args.output_prefix + "_periscope_reads.tsv"
+    # outfile_reads = args.output_prefix + "_periscope_reads.tsv"
     # set the output counts file name
 
     # add headers to these files
-    file_reads = open(outfile_reads, "w")
-    file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
+    # file_reads = open(outfile_reads, "w")
+    # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
     total_counts = setup_counts(primer_bed_object)
     count=0

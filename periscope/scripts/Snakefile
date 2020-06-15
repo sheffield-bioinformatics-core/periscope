@@ -11,11 +11,12 @@ rule all:
         # ORF only bam
         # expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix")),
         # counts of read types
-        expand("{output_prefix}_periscope_counts.tsv",output_prefix=config.get("output_prefix")),
+        expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
+        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix")),
         # read list
-        expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix")),
-         # amplicon list
-        expand("{output_prefix}_periscope_amplicons.tsv",output_prefix=config.get("output_prefix")),
+        # expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix")),
+        # amplicon list
+        expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
         # tagged bam
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix")),
