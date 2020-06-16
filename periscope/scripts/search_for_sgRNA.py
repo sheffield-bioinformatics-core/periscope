@@ -165,6 +165,7 @@ def setup_counts(primer_bed_object):
 
 
 def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_bed_object):
+    done=[]
     with open(outfile_amplicon, "w") as f:
         header = ["sample", "amplicon", "mapped_reads", "orf", "quality", "gRNA_count", "gRPTH", "sgRNA_count", "sgRPHT",
               "sgRPTg"]
@@ -243,11 +244,16 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
 
                     read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])-1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),
                                            from_string=True)
-
-                    orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
+                    if str(orf) not in done:
+                        read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1]) - 1) + "\t" + str(
+                            orf.split("_")[1]) + "\t" + str(orf),
+                                               from_string=True)
+                        orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
+                        done.append(str(orf))
     for i in orf_bed_object:
         print(i.name)
     f.close()
+    # orf_bed_object=orf_bed_object.sort().merge(c=4,o="distinct")
     return total_counts,orf_bed_object
 
 
