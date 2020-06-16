@@ -8,13 +8,9 @@ rule all:
         # all bam file
         expand("{output_prefix}.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}.bam.bai",output_prefix=config.get("output_prefix")),
-        # ORF only bam
-        # expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix")),
         # counts of read types
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix")),
-        # read list
-        # expand("{output_prefix}_periscope_reads.tsv",output_prefix=config.get("output_prefix")),
         # amplicon list
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
         # tagged bam
@@ -24,7 +20,6 @@ rule all:
 
 # collect fastqs
 rule collect_fastqs:
-    input:
     output:
         expand("{output_prefix}.fastq",output_prefix=config.get("output_prefix"))
     params:
@@ -45,7 +40,7 @@ rule align:
     shell:
         "minimap2 -ax map-ont -k 15 -t {params.threads} {params.reference} {input.merged_fastq} | samtools sort - | samtools view -bh - > {output}"
 
-
+# index the bam file
 rule index:
     input:
         bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
@@ -53,25 +48,6 @@ rule index:
         expand("{output_prefix}.bam.bai",output_prefix=config.get("output_prefix"))
     shell:
         "samtools index {input.bam}"
-
-# # subset bam
-# rule subset_bam:
-#     input:
-#         bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
-#     output:
-#         expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
-#     params:
-#         bed = expand("{resources_dir}/{interest_bed}",resources_dir=config.get("resources_dir"),interest_bed=config.get("interest_bed"))
-#     shell:
-#         "bedtools intersect -a {input.bam} -b {params.bed}  > {output}"
-#
-# rule index_orf_bam:
-#     input:
-#         orf_bam = expand("{output_prefix}_orfs_only.bam",output_prefix=config.get("output_prefix"))
-#     output:
-#         orf_bai = expand("{output_prefix}_orfs_only.bam.bai",output_prefix=config.get("output_prefix"))
-#     shell:
-#         "samtools index {input.orf_bam}"
 
 #run periscope
 rule periscope:
@@ -85,15 +61,13 @@ rule periscope:
     params:
         output_prefix = config.get("output_prefix"),
         score_cutoff = config.get("score_cutoff"),
-        max_read_length = config.get("max_read_length"),
-        min_read_length = config.get("min_read_length"),
         sample = config.get("sample"),
         search = expand("{scripts_dir}/search_for_sgRNA.py",scripts_dir=config.get("scripts_dir")),
         orf_bed = expand("{resources_dir}/{orf_bed}",resources_dir=config.get("resources_dir"),orf_bed=config.get("orf_bed")),
         primer_bed = expand("{resources_dir}/{primer_bed}",resources_dir=config.get("resources_dir"),primer_bed=config.get("primer_bed")),
         amplicon_bed =expand("{resources_dir}/{amplicon_bed}",resources_dir=config.get("resources_dir"),amplicon_bed=config.get("amplicon_bed"))
     shell:
-        "python {params.search} --bam {input.bam} --min-read-length {params.min_read_length} --max-read-length {params.max_read_length} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed}"
+        "python {params.search} --bam {input.bam} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed}"
 
 
 rule index_periscope_bam:

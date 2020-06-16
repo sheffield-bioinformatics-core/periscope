@@ -153,6 +153,11 @@ def open_bed(bed):
 
 
 def setup_counts(primer_bed_object):
+    """
+    make the main counts dictionary, we populate this as we loop through the reads in teh bam file
+    :param primer_bed_object: primer bed file object needed to get the pool name
+    :return:
+    """
     # set up dictionary for normalisation
     # need to get all regions in bed and make into a dict
     # { 71: { total_reads: x, genomic_reads: y, sg_reads: {orf:z,orf2:k},'normalised_sgRNA': {orf:i,orf2:t} } }
@@ -165,6 +170,15 @@ def setup_counts(primer_bed_object):
 
 
 def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_bed_object):
+    """
+    calculate normalised read counts on a per amplicon bases
+
+    :param mapped_reads: total mapped reads
+    :param total_counts: the total counts dictionary
+    :param outfile_amplicon: the amplicon outfile
+    :param orf_bed_object: the orf bed file object
+    :return: the total counts dictionary with normalisation added
+    """
     done=[]
     with open(outfile_amplicon, "w") as f:
         header = ["sample", "amplicon", "mapped_reads", "orf", "quality", "gRNA_count", "gRPTH", "sgRNA_count", "sgRPHT",
@@ -258,9 +272,14 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
 
 
 def summarised_counts_per_orf(total_counts,orf_bed_object):
-    # TODO: would be nice if for ORFS even with 0 we get gRNA counts oututted
-    # TODO: need to output novel counts
-    # TODO: need to output novel counts
+    """
+    summarise counts per ORF
+
+    sumarise the counts per ORF
+    :param total_counts: the total counts dictionary created by calculate_normalised_counts
+    :param orf_bed_object: the orf bed file object
+    :return: a final dictionary of counts and norm counts per ORF
+    """
     result = {}
     for orf in orf_bed_object:
         print("here")
@@ -310,12 +329,21 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
     return result
 
 def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel):
+    """
+    output the summarised counts from summarised_counts_per_orf
+
+    :param mapped_reads: mapped read count
+    :param result: the result dictionary created by summarised_counts_per_orf
+    :param outfile_counts: the outfile for the counts
+    :param outfile_counts_novel: the outfile for the novel counts
+    """
     with open(outfile_counts,"w") as f:
         header = ["sample", "orf", "mapped_reads", "amplicons","gRNA_count", "sgRNA_HQ_count", "sgRNA_LQ_count", "sgRNA_LLQ_count", "gRHPT", "sgRPTg_HQ", "sgRPTg_LQ", "sgRPTg_LLQ",
                   "sgRPTg_ALL", "sgRPHT_HQ", "sgRPHT_LQ", "sgRPHT_LLQ", "sgRPHT_ALL"]
         f.write(",".join(header)+"\n")
         for orf in result:
             if "novel" not in orf:
+                # construct output line
                 line = []
                 line.append(args.sample)
                 line.append(orf)
@@ -325,7 +353,6 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
                 line.append(str(result[orf]["sgRNA_HQ_count"]))
                 line.append(str(result[orf]["sgRNA_LQ_count"]))
                 line.append(str(result[orf]["sgRNA_LLQ_count"]))
-
                 line.append(str(result[orf]["gRPHT"]))
                 line.append(str(result[orf]["sgRPTg_HQ"]))
                 line.append(str(result[orf]["sgRPTg_LQ"]))
@@ -340,6 +367,7 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
 
                 f.write(",".join(line) + "\n")
         f.close()
+    # deal with novel sgRNA seperatley
     with open(outfile_counts_novel, "w") as f:
         novel_header = ["sample", "orf", "mapped_reads", "amplicons", "gRNA_count", "nsgRNA_HQ_count", "nsgRNA_LQ_count",
                         "gRHPT", "nsgRPTg_HQ", "nsgRPTg_LQ", "nsgRPTg_ALL", "nsgRPHT_HQ", "nsgRPHT_LQ", "nsgRPHT_ALL"]
@@ -347,6 +375,7 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
         for orf in result:
             if "novel" in orf:
                 print(orf)
+                # construct output line
                 line = []
                 line.append(args.sample)
                 line.append(orf)
@@ -355,7 +384,6 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
                 line.append(str(result[orf]["gRNA_count"]))
                 line.append(str(result[orf]["nsgRNA_HQ_count"]))
                 line.append(str(result[orf]["nsgRNA_LQ_count"]))
-
                 line.append(str(result[orf]["gRPHT"]))
                 line.append(str(result[orf]["nsgRPTg_HQ"]))
                 line.append(str(result[orf]["nsgRPTg_LQ"]))
@@ -476,17 +504,14 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data')
-    parser.add_argument('--bam', help='bam file',default="resources/SHEF-D13D2_covid19-20200410-1586533428_all_raw_pass.bam")
-    parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
-    parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (45)',default=45)
-    parser.add_argument('--orf-bed', dest='orf_bed', help='Cut-off for alignment score of leader (45)')
-    parser.add_argument('--primer-bed', dest='primer_bed', help='Cut-off for alignment score of leader (45)')
-    parser.add_argument('--amplicon-bed', dest='amplicon_bed', help='Cut-off for alignment score of leader (45)')
-    parser.add_argument('--sample', help='sample id',default="SHEF-D2BD9")
-    parser.add_argument('--max-read-length', dest='max_read_length', type=int, help="don't restrict to known ORF sites",
-                        default=800)
-    parser.add_argument('--min-read-length', dest='min_read_length', type=int,help="don't restrict to known ORF sites",
-                        default=200)
+    parser.add_argument('--bam', help='bam file',default="The bam file of full artic reads")
+    parser.add_argument('--output-prefix',dest='output_prefix',help="Path to the output, e.g. <DIR>/<SAMPLE_NAME>")
+    parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50) we recommend you leave this at 50',default=50)
+    parser.add_argument('--orf-bed', dest='orf_bed', help='The bed file with ORF start positions')
+    parser.add_argument('--primer-bed', dest='primer_bed', help='The bed file with artic primer positions')
+    parser.add_argument('--amplicon-bed', dest='amplicon_bed', help='A bed file of artic amplicons')
+    parser.add_argument('--sample', help='sample id',default="The identifier for your sample")
+
 
     args = parser.parse_args()
     print(args.score_cutoff)
