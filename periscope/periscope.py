@@ -55,9 +55,7 @@ def main():
         "score_cutoff": args.score_cutoff,
         "reference_fasta": 'nCoV-2019.reference.fasta',
         "sample": args.sample,
-        "threads": args.threads,
-        "min_read_length": args.min_read_length,
-        "max_read_length": args.max_read_length
+        "threads": args.threads
     }
     print(primers_bed)
 
