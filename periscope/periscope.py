@@ -59,12 +59,8 @@ def main():
     }
     print(primers_bed)
 
-    if args.novel == True:
-        print("here")
-        snakefile = os.path.join(scripts_dir, 'SnakefileN')
-    else:
-        print("this")
-        snakefile = os.path.join(scripts_dir, 'Snakefile')
+
+    snakefile = os.path.join(scripts_dir, 'Snakefile')
     print(snakefile)
     if not os.path.exists(snakefile):
         sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
