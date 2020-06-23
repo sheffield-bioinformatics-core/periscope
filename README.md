@@ -114,8 +114,12 @@ gunzip <ARTIC_NETWORK_VCF>.pass.vcf.gz
     --periscope-bam <PATH_TO_PERISCOPE_OUTPUT_BAM> \
     --vcf <ARTIC_NETWORK_VCF>.pass.vcf \
     --sample <SAMPLE_NAME> \
-    --output-prefix <OUPUT_PREFIX>
+    --output-prefix <PREFIX>
 ```
+
+`output-prefix` will be the directory and start of the filename for the output.
+
+So if you put `./SAMPLE1` for this argument outputs will go in the current working directory prefixed by "SAMPLE1". 
 
 #### <OUTPUT_PREFIX>_base_counts.csv
 
