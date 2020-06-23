@@ -33,6 +33,12 @@ periscope \
     --threads <THREADS_FOR_MAPPING>
 ```
 
+
+`output-prefix` will be the directory and start of the filename for the output.
+
+So if you put `./SAMPLE1` for this argument outputs will go in the current working directory prefixed by "SAMPLE1". 
+
+
 # Pipeline overview
 
 ## Pre-Processing
@@ -116,10 +122,6 @@ gunzip <ARTIC_NETWORK_VCF>.pass.vcf.gz
     --sample <SAMPLE_NAME> \
     --output-prefix <PREFIX>
 ```
-
-`output-prefix` will be the directory and start of the filename for the output.
-
-So if you put `./SAMPLE1` for this argument outputs will go in the current working directory prefixed by "SAMPLE1". 
 
 #### <OUTPUT_PREFIX>_base_counts.csv
 
