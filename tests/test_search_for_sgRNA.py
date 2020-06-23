@@ -6,19 +6,19 @@ from periscope.scripts.search_for_sgRNA import  PeriscopeRead, search_reads, cla
 
 truth = {
     "90b89b24-9c38-456b-a11e-12bf1712bb06": {
-        "class":"sgRNA",
+        "class":"sgRNA_HQ",
         "align_score":64.0,
         "amplicon": 71,
         "orf": "S"
     },
     "fe0e82e6-6239-4dc2-be2f-98a08860b3d7": {
-        "class":"gRNA",
+        "class":"sgRNA_LQ",
         "align_score":46.0,
         "amplicon": 71,
         "orf": "S"
     },
     "806f2bd2-3a11-4e54-9c2e-51e54aa3e94d": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 60.0,
         "amplicon": 72,
         "orf": "S"
@@ -48,13 +48,13 @@ truth = {
         "orf": None
     },
     "5125ffa6-2567-4ba2-9f05-e7f8a161aa11": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 54.0,
         "amplicon": 87,
         "orf": "E"
     },
     "b7b9fac8-8b27-40b8-9d02-8edc59c82f39": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 54.0,
         "amplicon": 87,
         "orf": "M"
@@ -72,13 +72,13 @@ truth = {
         "orf": None
     },
     "90928d27-3c71-45f2-b31c-3d7de36c78b8": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 54.0,
         "amplicon": 89,
         "orf": "ORF6"
     },
     "4d67e504-7d7d-4b11-aea2-3ec606195a1b": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 56.0,
         "amplicon": 90,
         "orf": "ORF6"
@@ -96,13 +96,13 @@ truth = {
         "orf": None
     },
     "1ec155b3-120c-4181-86ef-b31c186d4651": {
-        "class": "gRNA",
+        "class": "sgRNA_LLQ",
         "align_score": 26.0,
         "amplicon": 93,
         "orf": "N"
     },
     "e0d5f838-1aca-44d2-a001-e47d7c0edb06": {
-        "class": "sgRNA",
+        "class": "sgRNA_HQ",
         "align_score": 56.0,
         "amplicon": 93,
         "orf": "N"
@@ -118,7 +118,33 @@ truth = {
         "align_score": 14.0,
         "amplicon": 93,
         "orf": None
+    },
+    "e8981b0c-21fe-4920-80e3-530197f3d15e": {
+        "class": "nsgRNA_HQ",
+        "align_score": 64.0,
+        "amplicon": 67,
+        "orf": None
+    },
+    "07b675cc-6b19-4ed4-9341-6576ad51957f": {
+        "class": "gRNA",
+        "align_score": 14.0,
+        "amplicon": 67,
+        "orf": None
+    },
+    "76aaf579-4754-4bbe-b001-4ac2d6f76533": {
+        "class": "gRNA",
+        "align_score": 64.0,
+        "amplicon": 65,
+        "orf": None
+    },
+    "1e0b6284-ec08-4451-b0fc-3f7f36e75b31": {
+        "class": "gRNA",
+        "align_score": 14.0,
+        "amplicon": 97,
+        "orf": None
     }
+
+
 
 
 
@@ -173,7 +199,7 @@ dirname = os.path.dirname(__file__)
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads("reads.sam")
-    assert mapped_reads == 22
+    assert mapped_reads == 23
 
 
 def test_check_start():
@@ -193,11 +219,6 @@ def test_search_reads():
         result = search_reads(read, search)
         assert result["align_score"] == truth[read.query_name]["align_score"]
 
-def test_classify_read():
-    for read in truth:
-        result = classify_read(truth[read]["align_score"],50)
-        assert result == truth[read]["class"]
-
 
 def test_find_amplicon():
 
@@ -207,5 +228,27 @@ def test_find_amplicon():
     for read in inbamfile:
         amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
         assert amplicon == truth[read.query_name]["amplicon"]
+
+
+
+
+def test_classify_read():
+    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+
+    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+    primer_bed_object = read_bed_file(filename)
+
+    filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
+    bed_object = open_bed(filename)
+
+    for read in inbamfile:
+        print(read.query_name)
+        search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+        search_result = search_reads(read,search)
+        amplicons = find_amplicon(read, primer_bed_object)
+        orf = check_start(bed_object, read)
+        result = classify_read(read,search_result["align_score"],50,orf,amplicons)
+        print(result)
+        assert result == truth[read.query_name]["class"]
 
 

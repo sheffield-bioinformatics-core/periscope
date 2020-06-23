@@ -6,7 +6,7 @@ Initial classification of reads into sub-genomic or not based on https://www.bio
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/ocean.png "periscope")
 
 # Requirements
-periscope runs on MacOS and Linux. 
+periscope runs on MacOS and Linux. We have also confirmed the tool runs under windows 10 unix subsystem.
 
 
 * conda
@@ -18,7 +18,7 @@ periscope runs on MacOS and Linux.
 git clone https://github.com/sheffield-bioinformatics-core/periscope.git && cd periscope
 conda env create -f environment.yml
 conda activate periscope
-python setup.py install
+pip install .
 ```
 
 # Execution
@@ -30,11 +30,11 @@ periscope \
     --output-prefix <PATH_TO_OUTPUT> \
     --sample <SAMPLE_NAME> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
-    --score_cutoff <ALIGNMENT_CUTOFF_FOR_sgRNA> \
     --threads <THREADS_FOR_MAPPING>
 ```
 
 # Pipeline overview
+
 ## Pre-Processing
 
 * Collect demutiplexed pass fastqs
@@ -70,26 +70,63 @@ We have taken two approaches, a global normalisation based on mapped read counts
 
 ## Outputs:
 
-#### a tab-delimited text file of 
-- sample
-- read id 
-- read start position
-- orf the read starts in
-- pairwise alignment score
-- read class (g/sgRNA) 
-- amplicon number
+#### <OUTPUT_PREFIX>.fastq
 
-#### a tab-delimited text file with each row an ORF an each column of
-- raw count of putative sgRNA
-- genomic reads for the respective amplicon
-- total reads for the respective amplicon
-- normalised count of putaive sgRNA (sgRNA/gRNA)
+A merge of all files in the fastq directory specified as input.
 
-#### tagged bam file
+#### <OUTPUT_PREFIX>_periscope_counts.csv
+
+The counts of genomic, sub-genomic and normalisation values for known ORFs
+
+#### <OUTPUT_PREFIX>_periscope_amplicons.csv
+
+The amplicon by amplicon counts, this file is useful to see where the counts come from. Multiple amplicons may be represented more than once where they may have contributed to more than one ORF.
+
+#### <OUTPUT_PREFIX>_periscope_novel_counts.csv
+
+The counts of genomic, sub-genomic and normalisation values for non-canonical ORFs
+
+#### <OUTPUT_PREFIX>.bam
+
+minmap2 mapped reads and index with no adjustments made.
+
+#### <OUTPUT_PREFIX>_periscope.bam
+
+This is the original input bam file and index created by periscope with the reads specified in the fastq-dir. This file, however, has tags which represent the results of periscope:
+
 - XS is the alignment score
 - XA is the amplicon number
 - XC is the assigned class (gDNA or sgDNA)
 - XO is the orf assigned
+
+These are useful for manual review in IGV or similar genome viewer. You can sort or colour reads by these tags to aid in manual review and figure creation.
+
+
+# Extracting Base Frequencies
+
+To examine the composition of bases at variant sites we have provided this code.
+```
+conda activate periscope
+
+gunzip <ARTIC_NETWORK_VCF>.pass.vcf.gz
+
+<PATH_TO_PERISCOPE>/periscope/periscope/scripts/variant_expression.py \
+    --periscope-bam <PATH_TO_PERISCOPE_OUTPUT_BAM> \
+    --vcf <ARTIC_NETWORK_VCF>.pass.vcf \
+    --sample <SAMPLE_NAME> \
+    --output-prefix <OUPUT_PREFIX>
+```
+
+#### <OUTPUT_PREFIX>_base_counts.csv
+
+Counts of each base at each position
+
+#### <OUTPUT_PREFIX>_base_counts.png
+
+Plot of each position and base composition
+
+
+
 
 Why periscope? SUB-genomic RNA, SUB-marine, periscope.
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
