@@ -27,12 +27,11 @@ conda activate periscope
 
 periscope \
     --fastq-dir <PATH_TO_DEMUXED_FASTQ> \
-    --output-prefix <PATH_TO_OUTPUT> \
+    --output-prefix <PREFIX> \
     --sample <SAMPLE_NAME> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --threads <THREADS_FOR_MAPPING>
 ```
-
 
 `output-prefix` will be the directory and start of the filename for the output.
 
@@ -40,6 +39,9 @@ So if you put `./SAMPLE1` for this argument outputs will go in the current worki
 
 
 # Pipeline overview
+
+![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/workflow.png "periscope")<!-- .element height="10%" width="10%" -->
+__Figure 1. Workflow Overview__ 
 
 ## Pre-Processing
 
@@ -56,11 +58,11 @@ _Our median read count is ~250k and this will take around 25minutes_
 * Assign amplicon to read (using artic align_trim.py)
 * Search for leader sequence
 * Assign read to ORF
-* Classify read (see Figure 1)
+* Classify read (see Figure 2)
 * Normalise a few ways
 
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/read_classification.png "periscope")<!-- .element height="10%" width="10%" -->
-__Figure 1. Read Classification Algorithm__ 
+__Figure 2. Read Classification Algorithm__ 
 
 ## Normalisation
 
