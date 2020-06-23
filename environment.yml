@@ -14,6 +14,7 @@ dependencies:
   - biopython=1.74
   - pybedtools
   - snakemake-minimal=5.13
+  - pytest
   - pip
   - pip:
     - git+https://github.com/artic-network/fieldbioinformatics.git@3b6c1f3

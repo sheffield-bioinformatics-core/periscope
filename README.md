@@ -125,7 +125,17 @@ Counts of each base at each position
 
 Plot of each position and base composition
 
+# Running Tests
 
+We provide a sam file for testing the main module of periscope.
+
+reads.sam contains 23 reads which have been manually reviewed for the truth
+
+```
+cd <INSTALLATION_PATH>/periscope/tests
+
+pytest test_search_for_sgRNA.py 
+```
 
 
 Why periscope? SUB-genomic RNA, SUB-marine, periscope.
