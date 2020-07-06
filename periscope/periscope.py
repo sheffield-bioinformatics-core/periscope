@@ -8,11 +8,11 @@ import snakemake
 
 def main():
 
-    parser = argparse.ArgumentParser(description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
     parser.add_argument('--fastq-dir',dest='fastq_dir', help='the folder containing the raw pass demultiplexed fastqs from the artic protocol', default="resources/test.bam")
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
-    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used', default="V1")
+    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1, V2, V3\n* 2kb (for the UCL longer amplicons)', default="V1")
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")

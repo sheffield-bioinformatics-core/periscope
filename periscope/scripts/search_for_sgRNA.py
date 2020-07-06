@@ -17,7 +17,8 @@ class PeriscopeRead(object):
     def __init__(self, read):
         self.read = read
 
-
+import time
+from tqdm import tqdm
 
 def get_mapped_reads(bam):
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
@@ -135,10 +136,8 @@ def classify_read(read,score,score_cutoff,orf,amplicons):
             read_class="gRNA"
 
     if quality:
-        print(read_class+"_"+quality)
         return read_class+"_"+quality
     else:
-        print(read_class)
         return read_class
 
 
@@ -421,18 +420,18 @@ def main(args):
     total_counts = setup_counts(primer_bed_object)
     # for every read let's decide if it's sgRNA or not
     print("Processing " + str(mapped_reads) + " reads", file=sys.stderr)
-    for read in inbamfile:
+    for read in tqdm(inbamfile,total=mapped_reads):
         if read.seq == None:
-            print("%s read has no sequence" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s read has no sequence" %
+            #       (read.query_name), file=sys.stderr)
             continue
         if read.is_unmapped:
-            print("%s skipped as unmapped" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s skipped as unmapped" %
+            #       (read.query_name), file=sys.stderr)
             continue
         if read.is_supplementary:
-            print("%s skipped as supplementary" %
-                  (read.query_name), file=sys.stderr)
+            # print("%s skipped as supplementary" %
+            #       (read.query_name), file=sys.stderr)
             continue
 
         # find the amplicon for the read
@@ -502,7 +501,8 @@ if __name__ == '__main__':
     parser.add_argument('--orf-bed', dest='orf_bed', help='The bed file with ORF start positions')
     parser.add_argument('--primer-bed', dest='primer_bed', help='The bed file with artic primer positions')
     parser.add_argument('--amplicon-bed', dest='amplicon_bed', help='A bed file of artic amplicons')
-    parser.add_argument('--sample', help='sample id',default="The identifier for your sample")
+    parser.add_argument('--sample', help='sample id',default="SAMPLE")
+    parser.add_argument('--progress', help='display progress bar', default="")
 
 
     args = parser.parse_args()
