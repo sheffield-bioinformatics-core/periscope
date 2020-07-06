@@ -6,6 +6,12 @@
 A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic network amplicon sequencing data.
 Initial classification of reads into sub-genomic or not based on https://www.biorxiv.org/content/10.1101/2020.04.10.029454v1.abstract
 
+# Citing
+
+Please cite our pre-print if you use this tool in any publications:
+
+https://www.biorxiv.org/content/10.1101/2020.07.01.181867v1
+
 # Requirements
 periscope runs on MacOS and Linux. We have also confirmed the tool runs under windows 10 unix subsystem.
 
@@ -145,6 +151,7 @@ cd <INSTALLATION_PATH>/periscope/tests
 
 pytest test_search_for_sgRNA.py 
 ```
+
 
 
 Why periscope? SUB-genomic RNA, SUB-marine, periscope.

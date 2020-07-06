@@ -29,7 +29,7 @@ def main():
 
     # check if version number is correct
     version = args.artic_primers.upper()
-    if version not in ["V1", "V2", "V3"]:
+    if version not in ["V1", "V2", "V3","2kb"]:
         print("%s artic primer version incorrect" % (args.version), file=sys.stderr)
         exit(1)
     else:

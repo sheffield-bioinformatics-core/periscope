@@ -36,8 +36,8 @@ def check_start(bed_object,read):
         read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
         intersect = bed_object.intersect(read_feature)
         orf=intersect[0].name
-        if len(intersect) > 1:
-            print("odd")
+        # if len(intersect) > 1:
+        #     print("odd")
     except:
         orf=None
     return orf
@@ -264,8 +264,7 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
                                                from_string=True)
                         orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
                         done.append(str(orf))
-    for i in orf_bed_object:
-        print(i.name)
+
     f.close()
     # orf_bed_object=orf_bed_object.sort().merge(c=4,o="distinct")
     return total_counts,orf_bed_object
@@ -282,8 +281,6 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
     """
     result = {}
     for orf in orf_bed_object:
-        print("here")
-        print(orf.name)
         if orf.name not in result:
             result[orf.name] = {}
             result[orf.name]["gRPHT"] = 0
@@ -302,7 +299,6 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
                 result[orf.name]["amplicons"].append(str(amplicon))
                 result[orf.name]["gRNA_count"] += len(total_counts[amplicon]["gRNA"])
             if "novel" in orf.name:
-                print("YOYOY")
                 for quality in ["LQ", "HQ"]:
                     if orf.name in total_counts[amplicon]["nsgRNA_" + quality]:
                         result[orf.name]["nsgRNA_" + quality + "_count"] += len(
@@ -423,11 +419,9 @@ def main(args):
     # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
     total_counts = setup_counts(primer_bed_object)
-    count=0
     # for every read let's decide if it's sgRNA or not
+    print("Processing " + str(mapped_reads) + " reads", file=sys.stderr)
     for read in inbamfile:
-        count+=1
-        print(count)
         if read.seq == None:
             print("%s read has no sequence" %
                   (read.query_name), file=sys.stderr)
@@ -491,10 +485,8 @@ def main(args):
     # go through each amplicon and do normalisations
     outfile_amplicons = args.output_prefix + "_periscope_amplicons.csv"
     total_counts,orf_bed_object = calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicons,orf_bed_object)
-    print(orf_bed_object)
     # summarise result into ORFs
     result = summarised_counts_per_orf(total_counts,orf_bed_object)
-    print(result)
     # output summarised counts
     outfile_counts = args.output_prefix + "_periscope_counts.csv"
     outfile_counts_novel = args.output_prefix + "_periscope_novel_counts.csv"
@@ -514,7 +506,6 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    print(args.score_cutoff)
 
     periscope = main(args)
     if periscope:
