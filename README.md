@@ -153,6 +153,19 @@ cd <INSTALLATION_PATH>/periscope/tests
 pytest test_search_for_sgRNA.py 
 ```
 
+# Citations
+
+### Long Amplicon Tiling Data
+
+We implemened 2kb amplicon tilling in v0.0.2 from:
+
+SARS-CoV-2 genomes recovered by long amplicon tiling multiplex approach using nanopore sequencing and applicable to other sequencing platforms
+Paola Cristina Resende, Fernando Couto Motta, Sunando Roy, Luciana Appolinario, Allison Fabri, Joilson Xavier, Kathryn Harris, Aline Rocha Matos, Braulia Caetano, Maria Orgeswalska, Milene Miranda, Cristiana Garcia, André Abreu, Rachel Williams, Judith Breuer, Marilda M Siqueira
+bioRxiv 2020.04.30.069039; doi: https://doi.org/10.1101/2020.04.30.069039
+
+
+
+
 
 
 Why periscope? SUB-genomic RNA, SUB-marine, periscope.
