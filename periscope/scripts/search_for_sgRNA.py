@@ -369,7 +369,6 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
         f.write(",".join(novel_header) + "\n")
         for orf in result:
             if "novel" in orf:
-                print(orf)
                 # construct output line
                 line = []
                 line.append(args.sample)
@@ -477,8 +476,6 @@ def main(args):
     outbamfile.close()
     pysam.index(args.output_prefix + "_periscope.bam")
 
-
-    pp.pprint(total_counts)
 
 
     # go through each amplicon and do normalisations
