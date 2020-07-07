@@ -36,6 +36,7 @@ periscope \
     --fastq-dir <PATH_TO_DEMUXED_FASTQ> \
     --output-prefix <PREFIX> \
     --sample <SAMPLE_NAME> \
+    --artic-primers <ASSAY_VERSION; V1,V2,V3 or 2kb> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --threads <THREADS_FOR_MAPPING>
 ```
