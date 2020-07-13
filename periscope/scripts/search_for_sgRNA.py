@@ -4,7 +4,7 @@ from periscope import __version__
 from Bio import pairwise2
 import pysam
 import argparse
-from pybedtools import BedTool
+from pybedtools import *
 import datetime
 from artic.align_trim import find_primer
 from artic.vcftagprimersites import read_bed_file
@@ -41,6 +41,8 @@ def check_start(bed_object,read):
         #     print("odd")
     except:
         orf=None
+    # remove bedtools objects from temp
+    cleanup()
     return orf
 
 def search_reads(read,search):
@@ -209,6 +211,7 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
                     # normalised per 1000 gRNA reads from this amplicon
                     amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
 
+
                     total_counts[amplicon]["sgRPTg_" + quality][orf] = amplicon_orf_sgRPTg
 
                     line = []
@@ -263,6 +266,7 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
                                                from_string=True)
                         orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
                         done.append(str(orf))
+
 
     f.close()
     # orf_bed_object=orf_bed_object.sort().merge(c=4,o="distinct")
@@ -420,6 +424,7 @@ def main(args):
     # for every read let's decide if it's sgRNA or not
     print("Processing " + str(mapped_reads) + " reads", file=sys.stderr)
     for read in tqdm(inbamfile,total=mapped_reads):
+
         if read.seq == None:
             # print("%s read has no sequence" %
             #       (read.query_name), file=sys.stderr)
@@ -477,6 +482,8 @@ def main(args):
     pysam.index(args.output_prefix + "_periscope.bam")
 
 
+    # define ORF bed object because we cleared our session
+    orf_bed_object = open_bed(args.orf_bed)
 
     # go through each amplicon and do normalisations
     outfile_amplicons = args.output_prefix + "_periscope_amplicons.csv"
@@ -499,12 +506,16 @@ if __name__ == '__main__':
     parser.add_argument('--primer-bed', dest='primer_bed', help='The bed file with artic primer positions')
     parser.add_argument('--amplicon-bed', dest='amplicon_bed', help='A bed file of artic amplicons')
     parser.add_argument('--sample', help='sample id',default="SAMPLE")
+    parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
 
 
     args = parser.parse_args()
 
+    set_tempdir(args.tmp)
+
     periscope = main(args)
+
     if periscope:
         print("all done", file=sys.stderr)
 

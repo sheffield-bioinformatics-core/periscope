@@ -18,6 +18,9 @@ def main():
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
     parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
+    parser.add_argument('--tmp',
+                        help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",
+                        default="/tmp")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
 
     args = parser.parse_args()
@@ -55,7 +58,8 @@ def main():
         "score_cutoff": args.score_cutoff,
         "reference_fasta": 'nCoV-2019.reference.fasta',
         "sample": args.sample,
-        "threads": args.threads
+        "threads": args.threads,
+        "tmp":args.tmp
     }
     print(primers_bed)
 

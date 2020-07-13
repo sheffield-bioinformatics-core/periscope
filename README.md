@@ -45,6 +45,9 @@ periscope \
 
 So if you put `./SAMPLE1` for this argument outputs will go in the current working directory prefixed by "SAMPLE1". 
 
+## `/tmp` Issues
+
+If you have issues with `tmp` this is because pybedtools writes there. v0.0.3 contains a fix, and you can also specify `--tmp` and redirect this somewhere else
 
 # Pipeline overview
 
