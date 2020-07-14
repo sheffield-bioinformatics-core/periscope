@@ -397,11 +397,17 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
                 line.append(str(result[orf]["gRPHT"]))
                 line.append(str(result[orf]["nsgRPTg_HQ"]))
                 line.append(str(result[orf]["nsgRPTg_LQ"]))
-                nsgRPTg_all = sum([result[orf]["nsgRPTg_HQ"], result[orf]["nsgRPTg_LQ"]])
+                try:
+                    nsgRPTg_all = sum([result[orf]["nsgRPTg_HQ"], result[orf]["nsgRPTg_LQ"]])
+                except:
+                    nsgRPTg_all = "NA"
                 line.append(str(nsgRPTg_all))
                 line.append(str(result[orf]["nsgRPHT_HQ"]))
                 line.append(str(result[orf]["nsgRPHT_LQ"]))
-                nsgRPHT_all = sum([result[orf]["nsgRPHT_HQ"], result[orf]["nsgRPHT_LQ"]])
+                try:
+                    nsgRPHT_all = sum([result[orf]["nsgRPHT_HQ"], result[orf]["nsgRPHT_LQ"]])
+                except:
+                    nsgRPTg_all = "NA"
                 line.append(str(nsgRPHT_all))
 
                 f.write(",".join(line) + "\n")

@@ -57,7 +57,8 @@ rule periscope:
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix"))
+        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix")),
+        expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
     params:
         search = expand("{scripts_dir}/search_for_sgRNA.py",scripts_dir=config.get("scripts_dir")),
         output_prefix = config.get("output_prefix"),
@@ -71,10 +72,3 @@ rule periscope:
         "python {params.search} --bam {input.bam} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed} --tmp {params.tmp}"
 
 
-rule index_periscope_bam:
-    input:
-        periscope_bam = expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix"))
-    output:
-        expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix")),
-    shell:
-        "samtools index {input.periscope_bam}"
