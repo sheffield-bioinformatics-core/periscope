@@ -209,7 +209,10 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
                     total_counts[amplicon]["sgRPHT_" + quality][orf] = amplicon_orf_sgRPHT
 
                     # normalised per 1000 gRNA reads from this amplicon
-                    amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
+                    try:
+                        amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
+                    except:
+                        amplicon_orf_sgRPTg = "NA"
 
 
                     total_counts[amplicon]["sgRPTg_" + quality][orf] = amplicon_orf_sgRPTg
@@ -324,7 +327,10 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
                         if qmetric not in result[orf.name]:
                             result[orf.name][qmetric] = 0
                         if orf.name in total_counts[amplicon][qmetric]:
-                            result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
+                            try:
+                                result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
+                            except:
+                                result[orf.name][qmetric] = "NA"
     return result
 
 def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel):
@@ -356,12 +362,18 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
                 line.append(str(result[orf]["sgRPTg_HQ"]))
                 line.append(str(result[orf]["sgRPTg_LQ"]))
                 line.append(str(result[orf]["sgRPTg_LLQ"]))
-                sgRPTg_all = sum([result[orf]["sgRPTg_HQ"], result[orf]["sgRPTg_LQ"], result[orf]["sgRPTg_LLQ"]])
+                try:
+                    sgRPTg_all = sum([result[orf]["sgRPTg_HQ"], result[orf]["sgRPTg_LQ"], result[orf]["sgRPTg_LLQ"]])
+                except:
+                    sgRPTg_all = "NA"
                 line.append(str(sgRPTg_all))
                 line.append(str(result[orf]["sgRPHT_HQ"]))
                 line.append(str(result[orf]["sgRPHT_LQ"]))
                 line.append(str(result[orf]["sgRPHT_LLQ"]))
-                sgRPHT_all = sum([result[orf]["sgRPHT_HQ"], result[orf]["sgRPHT_LQ"], result[orf]["sgRPHT_LLQ"]])
+                try:
+                    sgRPHT_all = sum([result[orf]["sgRPHT_HQ"], result[orf]["sgRPHT_LQ"], result[orf]["sgRPHT_LLQ"]])
+                except:
+                    sgRPHT_all = "NA"
                 line.append(str(sgRPHT_all))
 
                 f.write(",".join(line) + "\n")
