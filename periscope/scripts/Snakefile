@@ -52,7 +52,8 @@ rule index:
 #run periscope
 rule periscope:
     input:
-        bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
+        bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix")),
+        bai = expand("{output_prefix}.bam.bai",output_prefix=config.get("output_prefix"))
     output:
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
