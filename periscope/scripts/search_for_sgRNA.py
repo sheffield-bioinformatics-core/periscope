@@ -261,12 +261,15 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
                     line.append(str(amplicon_orf_sgRPTg))
                     f.write(",".join(line)+"\n")
 
-                    read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])-1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),
-                                           from_string=True)
+                    # read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])-1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),
+                    #                        from_string=True)
                     if str(orf) not in done:
-                        read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1]) - 1) + "\t" + str(
-                            orf.split("_")[1]) + "\t" + str(orf),
-                                               from_string=True)
+                        # fixes bug where if the read maps to 0 end up with -1 as a position
+                        if int(orf.split("_")[1]) == 0:
+                            read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])) + "\t" + str(
+                                orf.split("_")[1]) + "\t" + str(orf), from_string=True)
+                        else:
+                            read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1]) - 1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),from_string=True)
                         orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
                         done.append(str(orf))
 

@@ -254,3 +254,10 @@ def test_classify_read():
         assert result == truth[read.query_name]["class"]
 
 
+def test_pybedtools():
+    import pybedtools
+    read_feature = pybedtools.BedTool("MN908947.3" + "\t" + str(0) + "\t" + str(0),from_string=True)
+    for bed_line in read_feature:
+        assert bed_line.chrom == "MN908947.3"
+        assert bed_line.start == 0
+        assert bed_line.end == 0
