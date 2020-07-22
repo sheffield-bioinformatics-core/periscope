@@ -7,6 +7,7 @@ setup(
     packages=['periscope'],
     scripts=['periscope/scripts/Snakefile',
              'periscope/scripts/search_for_sgRNA.py',
+             'periscope/scripts/search_for_sgRNA_spliced.py',
              'periscope/scripts/variant_expression.py'
              ],
     url='',

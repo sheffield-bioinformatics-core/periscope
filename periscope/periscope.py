@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
+    parser.add_argument('-s', '--spliced', action='store_true', help="run periscope in spliced mode")
     parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
     parser.add_argument('--tmp',
@@ -59,7 +60,8 @@ def main():
         "reference_fasta": 'nCoV-2019.reference.fasta',
         "sample": args.sample,
         "threads": args.threads,
-        "tmp":args.tmp
+        "tmp":args.tmp,
+        "spliced":args.spliced
     }
     print(primers_bed)
 
