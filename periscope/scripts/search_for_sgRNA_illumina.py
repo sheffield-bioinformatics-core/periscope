@@ -638,11 +638,14 @@ def main(args):
     outbamfile.close()
     pysam.index(args.output_prefix + "_periscope.bam")
 
+    novel_count=0
     for orf in orfs:
         if "novel" not in orf:
             print(orf)
             print(orf+"\t"+str(len(orfs[orf])/(orf_coverage[orf]/1000)))
-
+        else:
+            novel_count+=len(orfs[orf])
+    print(novel_count)
     # print(count)
     # print(orfs)
 

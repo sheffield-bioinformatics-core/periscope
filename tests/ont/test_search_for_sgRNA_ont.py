@@ -29,7 +29,7 @@
 # TODO - I need some reads supporting 7a
 
 # Import all the methods we need
-from periscope.scripts.search_for_sgRNA import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed
+from periscope.scripts.search_for_sgRNA_ont import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed
 
 # this is the truth for these reads
 
@@ -206,7 +206,7 @@ def test_mapped_reads():
 
 def test_check_start():
     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
+    filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
     for read in inbamfile:
         orf = check_start(bed_object,read)
@@ -224,7 +224,7 @@ def test_search_reads():
 
 def test_find_amplicon():
 
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+    filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)
     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
     for read in inbamfile:
@@ -237,10 +237,10 @@ def test_find_amplicon():
 def test_classify_read():
     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
 
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+    filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)
 
-    filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
+    filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
 
     for read in inbamfile:

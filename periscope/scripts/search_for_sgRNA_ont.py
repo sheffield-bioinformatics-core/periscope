@@ -31,18 +31,25 @@ def check_start(bed_object,read):
     :param read: pysam read object
     :return: the orf
     """
-
     # reads with a pos of 0 make this fail so puting in try except works
-    try:
-        read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
-        intersect = bed_object.intersect(read_feature)
-        orf=intersect[0].name
+    # try:
+    for row in bed_object:
+        # see if read falls within ORF start location
+        if row.end >= read.pos >= row.start:
+            orf = row.name
+            break
+        else:
+            orf=None
+
+        # read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
+        # intersect = bed_object.intersect(read_feature)
+        # orf=intersect[0].name
         # if len(intersect) > 1:
         #     print("odd")
-    except:
-        orf=None
+    # except:
+    #     orf=None
     # remove bedtools objects from temp
-    cleanup()
+    # cleanup()
     return orf
 
 def search_reads(read,search):

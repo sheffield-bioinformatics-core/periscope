@@ -22,6 +22,7 @@ def main():
                         help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",
                         default="/tmp")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
+    parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
 
     args = parser.parse_args()
 
@@ -59,7 +60,8 @@ def main():
         "reference_fasta": 'nCoV-2019.reference.fasta',
         "sample": args.sample,
         "threads": args.threads,
-        "tmp":args.tmp
+        "tmp":args.tmp,
+        "technology":args.technology
     }
     print(primers_bed)
 

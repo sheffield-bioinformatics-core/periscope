@@ -27,18 +27,30 @@ rule collect_fastqs:
     shell:
         "cat {params.fastq_dir}/*.fastq > {output}"
 
+if config["technology"] == "illumina":
+    rule align:
+        input:
+            merged_fastq = expand("{output_prefix}.fastq",output_prefix=config.get("output_prefix"))
+        output:
+           expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
+        params:
+            reference = expand("{resources_dir}/{reference_fasta}",resources_dir=config.get("resources_dir"),reference_fasta=config.get("reference_fasta")),
+            threads = config.get("threads")
+        shell:
+            "bwa -Y -t {params.threads} {params.reference} {input.merged_fastq} | samtools sort - | samtools view -bh - > {output}"
 
-# map fastqs
-rule align:
-    input:
-        merged_fastq = expand("{output_prefix}.fastq",output_prefix=config.get("output_prefix"))
-    output:
-       expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
-    params:
-        reference = expand("{resources_dir}/{reference_fasta}",resources_dir=config.get("resources_dir"),reference_fasta=config.get("reference_fasta")),
-        threads = config.get("threads")
-    shell:
-        "minimap2 -ax map-ont -k 15 -t {params.threads} {params.reference} {input.merged_fastq} | samtools sort - | samtools view -bh - > {output}"
+elif config["technology"] == "ont":
+    # map fastqs
+    rule align:
+        input:
+            merged_fastq = expand("{output_prefix}.fastq",output_prefix=config.get("output_prefix"))
+        output:
+           expand("{output_prefix}.bam",output_prefix=config.get("output_prefix"))
+        params:
+            reference = expand("{resources_dir}/{reference_fasta}",resources_dir=config.get("resources_dir"),reference_fasta=config.get("reference_fasta")),
+            threads = config.get("threads")
+        shell:
+            "minimap2 -ax map-ont -k 15 -t {params.threads} {params.reference} {input.merged_fastq} | samtools sort - | samtools view -bh - > {output}"
 
 # index the bam file
 rule index:
@@ -61,7 +73,7 @@ rule periscope:
         expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
     params:
-        search = expand("{scripts_dir}/search_for_sgRNA.py",scripts_dir=config.get("scripts_dir")),
+        search = expand("{scripts_dir}/search_for_sgRNA_{technology}.py",scripts_dir=config.get("scripts_dir"),technology=config.get("technology")),
         output_prefix = config.get("output_prefix"),
         score_cutoff = config.get("score_cutoff"),
         sample = config.get("sample"),

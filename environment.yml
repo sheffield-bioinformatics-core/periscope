@@ -12,6 +12,7 @@ dependencies:
   - numpy
   - pysam
   - minimap2
+  - bwa
   - bedtools
   - biopython=1.74
   - pybedtools

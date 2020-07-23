@@ -1,5 +1,6 @@
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/periscope.png "periscope")
 
+**v0.0.6 Released with HUGE (100x) speed improvement!**
 
 # periscope
 
