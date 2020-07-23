@@ -9,6 +9,7 @@ dependencies:
   - plotnine
   - pandas
   - samtools
+  - numpy
   - pysam
   - minimap2
   - bedtools
