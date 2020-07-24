@@ -30,16 +30,20 @@ pip install .
 ```
 
 # Execution
+
 ```
 conda activate periscope
 
 periscope \
-    --fastq-dir <PATH_TO_DEMUXED_FASTQ> \
+    --fastq-dir <PATH_TO_DEMUXED_FASTQ> \ (ont only)
+    OR
+    --fastq <FULL_PATH_OF_FASTQ_FILE(s)> \ (space separated list of fastq files, you MUST use this for Illumina data)
     --output-prefix <PREFIX> \
     --sample <SAMPLE_NAME> \
     --artic-primers <ASSAY_VERSION; V1,V2,V3 or 2kb> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
-    --threads <THREADS_FOR_MAPPING>
+    --technology <SEQUECNING TECH; ont or illumina> \
+    --threads <THREADS_FOR_MAPPING> 
 ```
 
 `output-prefix` will be the directory and start of the filename for the output.

@@ -4,12 +4,13 @@ import argparse
 import sys
 import os
 import snakemake
-
+import glob
 
 def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
-    parser.add_argument('--fastq-dir',dest='fastq_dir', help='the folder containing the raw pass demultiplexed fastqs from the artic protocol', default="resources/test.bam")
+    parser.add_argument('--fastq-dir',dest='fastq_dir', help='the folder containing the raw pass demultiplexed fastqs from the artic protocol, if this is illumina data the tool expects a file labelled R1 and R2 in this dir.', default=None,required=False)
+    parser.add_argument('--fastq',dest='fastq',help='if you already have a single fastq then you can use this flag instead, if illumina paired end separate fastq by space', nargs='+',required=False,default=[])
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
     parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1, V2, V3\n* 2kb (for the UCL longer amplicons)', default="V1")
@@ -26,10 +27,41 @@ def main():
 
     args = parser.parse_args()
 
+    # if technology is illumina then we need to know where fastqs are because they could be paired end
+    # this will work with any fastq input type
+    if args.technology == "illumina":
+        if len(args.fastq) == 0:
+            print("If technology is illumina you must specify input fastqs wih --fastq flag. Do not use --fastq-dir", file=sys.stderr)
+            exit(1)
+
     # check if fastq_dir exists
-    if not os.path.exists(args.fastq_dir):
-        print("%s fastq directory must exist" % (args.fastq_dir), file=sys.stderr)
-        exit(1)
+    print(args.fastq_dir)
+    gzipped=False
+    extension=".fastq"
+    if args.fastq_dir:
+        if not os.path.exists(args.fastq_dir):
+            print("%s fastq directory must exist" % (args.fastq_dir), file=sys.stderr)
+            exit(1)
+        #here we should find out if fastqs are compressed or not - need to cat or zcat depending
+        else:
+            directory_listing = glob.glob(args.fastq_dir)
+            if ".fq" in directory_listing:
+                extension=".fq"
+            if ".fq.gz" in directory_listing:
+                gzipped=True
+                extension=".fq.gz"
+            if ".fastq.gz" in directory_listing:
+                gzipped=True
+                extension = ".fastq.gz"
+
+
+    print(args.fastq)
+    print(type(args.fastq))
+    if len(args.fastq)>0:
+        for fastq in args.fastq:
+            if not os.path.exists(fastq):
+                print("%s fastq file must exist" % (fastq), file=sys.stderr)
+                exit(1)
 
     # check if version number is correct
     version = args.artic_primers
@@ -49,6 +81,9 @@ def main():
 
     config = {
         "fastq_dir": args.fastq_dir,
+        "extension": extension,
+        "gzipped":gzipped,
+        "fastq": args.fastq,
         "output_prefix": args.output_prefix,
         "scripts_dir":scripts_dir,
         "resources_dir":args.resources,

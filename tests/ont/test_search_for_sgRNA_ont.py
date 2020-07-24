@@ -180,21 +180,9 @@ truth = {
 }
 
 
-
-
-
-
-
-
-
 import pysam
 import os
 from artic.vcftagprimersites import read_bed_file
-
-
-
-
-
 
 
 dirname = os.path.dirname(__file__)
