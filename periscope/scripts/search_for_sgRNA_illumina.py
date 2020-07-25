@@ -644,6 +644,7 @@ def main(args):
             print(orf)
             print(orf+"\t"+str(len(orfs[orf])/(orf_coverage[orf]/1000)))
         else:
+            print(orf+"\t"+str(len(orfs[orf])))
             novel_count+=len(orfs[orf])
     print(novel_count)
     # print(count)
