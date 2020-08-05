@@ -115,16 +115,17 @@ def extact_soft_clipped_bases(read):
             # allow 3 mistamches
             perfect = 60.0
         else:
-            perfect = number_of_bases_sclipped * 2
+            # allow 2 mistamches
+            perfect = (number_of_bases_sclipped * 2)-4
 
         align = pairwise2.align.localms(bases_sclipped, search, 2, -2, -20, -.1,  one_alignment_only=True  )
         align_score=align[0][2]
         align_right_position = align[0][4]
-        # print(align)
-        # print(perfect)
-        # print(align_score)
-        # print(allowed_mismatches)
-        # print(align[0][3])
+        if read.query_name == "NS500628:91:H77C7AFX2:1:11101:9209:7874":
+            print(align)
+            print(perfect)
+            print(align_score)
+            print(align[0][3])
 
         # position of alignment must be all the way to the right
         if align_right_position >= len(search):
@@ -570,6 +571,7 @@ def main(args):
     result={}
     count=0
     orfs={}
+    reads={}
     for read in tqdm(inbamfile,total=mapped_reads):
 
         if read.seq == None:
@@ -594,59 +596,141 @@ def main(args):
         # # print(read.get_tags())
         # print(read.cigar)
         test = extact_soft_clipped_bases(read)
-        # read is sgRNA
+        if read.query_name not in reads:
+            reads[read.query_name] = []
         orf=None
-        if test == True:
-            count+=1
-            orf=None
-            # canonical ORFS
-            for row in orf_bed_object:
-                # see if read falls within ORF start location
-                if row.end >= read.pos >= row.start:
-                    orf = row.name
-                    if orf not in orfs:
-                        orfs[orf]=[]
-                    else:
-                        orfs[orf].append(read)
-            # not a canonical ORF so it's novel
-            if orf == None:
-                name = "novel_" + str(read.pos)
-                if name not in orfs:
-                    orfs[name]=[]
-                orfs[name].append(read)
+        for row in orf_bed_object:
+            # see if read falls within ORF start location
+            if row.end >= read.pos >= row.start:
+                orf = row.name
+        if orf == None:
+            if test == True:
+                orf = "novel_" + str(read.pos)
 
-        read.set_tag('XO', orf)
+
+        reads[read.query_name].append(
+            {
+                "sgRNA":test,
+                "orf": orf,
+                "pos": read.pos,
+                "read": read
+            }
+        )
+
+        # read is sgRNA
+        # orf=None
+        # if test == True:
+        #     count+=1
+        #     orf=None
+        #     # canonical ORFS
+        #     for row in orf_bed_object:
+        #         # see if read falls within ORF start location
+        #         if row.end >= read.pos >= row.start:
+        #             orf = row.name
+        #             if orf not in orfs:
+        #                 orfs[orf]=[]
+        #             else:
+        #                 orfs[orf].append(read)
+        #     # not a canonical ORF so it's novel
+        #     if orf == None:
+        #         name = "novel_" + str(read.pos)
+        #         if name not in orfs:
+        #             orfs[name]=[]
+        #         orfs[name].append(read)
+        #
+        # read.set_tag('XO', orf)
 
 
         # we have to deal with mate pairs, so if we already have a sgRNA call for that
         # mate pair then we just ignore
-        old_result = None
-        if read.query_name in result:
-            old_result = result[read.query_name]
-        if old_result == None:
-            result[read.query_name] = test
-            if test == True:
-                read.set_tag('XC', "sgRNA")
-            else:
-                read.set_tag('XC',"gRNA")
-        elif old_result == False:
-            if test == True:
-                result[read.query_name] = True
-                read.set_tag('XC',"sgRNA")
-        outbamfile.write(read)
+        # TODO: keep a dictionary of read classification and when you get to mate classify same?
+
+        # old_result = None
+        # if read.query_name in result:
+        #     old_result = result[read.query_name]
+        # if old_result == None:
+        #     result[read.query_name] = test
+        #     if test == True:
+        #         read.set_tag('XC', "sgRNA")
+        #     else:
+        #         read.set_tag('XC',"gRNA")
+        # elif old_result == False:
+        #     if test == True:
+        #         result[read.query_name] = True
+        #         read.set_tag('XC',"sgRNA")
+
+        # outbamfile.write(read)
+
+    # now we have all the reads classified, deal with pairs
+
+    for id,pair in reads.items():
+
+        # get the class and orf of the left hand read, this will be the classification and ORF for the pair
+        left_read = min(pair, key=lambda x: x['pos'])
+        right_read = max(pair, key=lambda x: x['pos'])
+        read_class = left_read["sgRNA"]
+        orf = left_read["orf"]
+        # print(orf)
+
+        left_read_object = left_read["read"]
+        right_read_object = right_read["read"]
+
+        left_read_object.set_tag('XO', 'orf')
+        right_read_object.set_tag('XO', 'orf')
+
+        if read_class == True:
+            left_read_object.set_tag('XC', 'sgRNA')
+            right_read_object.set_tag('XC', 'sgRNA')
+        else:
+            left_read_object.set_tag('XC', 'gRNA')
+            right_read_object.set_tag('XC', 'gRNA')
+
+
+
+        outbamfile.write(left_read_object)
+        outbamfile.write(right_read_object)
+
+        if orf == None:
+            continue
+        if read_class == False:
+            continue
+
+        if orf not in orfs:
+            orfs[orf] = []
+        else:
+            orfs[orf].append(left_read_object)
+
+
+    # print(orfs)
+
+
+
 
     outbamfile.close()
-    pysam.index(args.output_prefix + "_periscope.bam")
+    pysam.sort("-o", args.output_prefix + "_periscope_sorted.bam",  args.output_prefix + "_periscope.bam")
+    pysam.index(args.output_prefix + "_periscope_sorted.bam")
 
     novel_count=0
+    canonical = open(args.output_prefix+"_periscope_counts.csv","w")
+    canonical.write(",".join(["sample","orf","sgRNA_count","coverage","sgRPTM\n"]))
+
+    novel = open(args.output_prefix+"_periscope_novel_counts.csv","w")
+    novel.write(",".join(["sample", "orf", "sgRNA_count", "coverage", "sgRPTM\n"]))
+
     for orf in orfs:
         if "novel" not in orf:
             print(orf)
-            print(orf+"\t"+str(len(orfs[orf])/(orf_coverage[orf]/1000)))
+            canonical.write(args.sample+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(len(orfs[orf])/(orf_coverage[orf]/1000))+"\n")
         else:
-            print(orf+"\t"+str(len(orfs[orf])))
+            novel.write(args.sample+","+orf+","+str(len(orfs[orf]))+","+"NA"+","+"NA"+"\n")
             novel_count+=len(orfs[orf])
     print(novel_count)
+    canonical.close()
+    novel.close()
+
+    amplicons = open(args.output_prefix + "_periscope_amplicons.csv", "w")
+    amplicons.write("not used yet")
+    amplicons.close()
     # print(count)
     # print(orfs)
 
@@ -691,7 +775,7 @@ def main(args):
     #     outbamfile.write(read)
     #
     # outbamfile.close()
-    # pysam.index(args.output_prefix + "_periscope.bam")
+
     #
     #
     # # define ORF bed object because we cleared our session
