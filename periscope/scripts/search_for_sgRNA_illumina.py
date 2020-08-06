@@ -121,11 +121,11 @@ def extact_soft_clipped_bases(read):
         align = pairwise2.align.localms(bases_sclipped, search, 2, -2, -20, -.1,  one_alignment_only=True  )
         align_score=align[0][2]
         align_right_position = align[0][4]
-        if read.query_name == "NS500628:91:H77C7AFX2:1:11101:9209:7874":
-            print(align)
-            print(perfect)
-            print(align_score)
-            print(align[0][3])
+
+        print(align)
+        print(perfect)
+        print(align_score)
+        print(align[0][3])
 
         # position of alignment must be all the way to the right
         if align_right_position >= len(search):
