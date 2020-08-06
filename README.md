@@ -50,6 +50,8 @@ periscope \
 
 So if you put `./SAMPLE1` for this argument outputs will go in the current working directory prefixed by "SAMPLE1". 
 
+***Note*** - for illumina data please use --fastq <FASTQ_R1>.fastq.gz <FASTQ_R2>.fastq.gz and --technology illumina
+
 ## `/tmp` Issues
 
 If you have issues with `tmp` this is because pybedtools writes there. v0.0.3 contains a fix, and you can also specify `--tmp` and redirect this somewhere else
@@ -82,6 +84,8 @@ __Figure 2. Read Classification Algorithm__
 
 ## Normalisation
 
+### ONT Data
+
 We have taken two approaches, a global normalisation based on mapped read counts or a local normalisation based on gRNA from the same amplicon.
 
 * gRNA or sgRNA Per 100,000 mapped reads (gRPHT or sgRPHT)
@@ -91,6 +95,9 @@ We have taken two approaches, a global normalisation based on mapped read counts
         * multiple amplicons can contribute to reads which support the same sgRNA
         * we normalise on a per amplicon level and then sum these to get an overall normalised count
 
+### Illumina Data
+
+Ilumina data is still a work in progress, as of v0.0.7 you can get raw sgRNA counts and counts normalised to the average coverage around the ORF TRS start site.
 
 ## Outputs:
 
