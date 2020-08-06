@@ -12,7 +12,7 @@ rule all:
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
         # tagged bam
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix")),
+        # expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
 
 
 
@@ -96,8 +96,8 @@ rule periscope:
         expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix")),
-        expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
+        expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix"))
+        # expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
     params:
         search = expand("{scripts_dir}/search_for_sgRNA_{technology}.py",scripts_dir=config.get("scripts_dir"),technology=config.get("technology")),
         output_prefix = config.get("output_prefix"),
