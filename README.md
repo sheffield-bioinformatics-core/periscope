@@ -1,6 +1,6 @@
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/periscope.png "periscope")
 
-**v0.0.7 Released with experimental Illumina sgRNA detection**
+**v0.0.8 With improved Illumina sgRNA detection**
 
 # periscope
 
@@ -97,7 +97,13 @@ We have taken two approaches, a global normalisation based on mapped read counts
 
 ### Illumina Data
 
-Ilumina data is still a work in progress, as of v0.0.7 you can get raw sgRNA counts and counts normalised to the average coverage around the ORF TRS start site.
+Ilumina data is still a work in progress, as of v0.0.8 you can get raw sgRNA counts and counts normalised to the average coverage around the ORF TRS start site.
+
+It is worth noting this follows a slightly different algorithm, relying instead on soft clipping. The ratoinale here is that illumina data is more accurate therefore we
+can detect shorter matches to the leader.
+
+- 
+
 
 ## Outputs:
 

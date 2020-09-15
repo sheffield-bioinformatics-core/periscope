@@ -107,7 +107,7 @@ def extact_soft_clipped_bases(read):
 
 
         # not enough bases to determine leader
-        if number_of_bases_sclipped < 5:
+        if number_of_bases_sclipped < 6:
             return False
 
         # determine perfect score for a match
@@ -115,8 +115,8 @@ def extact_soft_clipped_bases(read):
             # allow 3 mistamches
             perfect = 60.0
         else:
-            # allow 2 mistamches
-            perfect = (number_of_bases_sclipped * 2)-4
+            # allow 1 mistamches
+            perfect = (number_of_bases_sclipped * 2)-2
 
         align = pairwise2.align.localms(bases_sclipped, search, 2, -2, -20, -.1,  one_alignment_only=True  )
         align_score=align[0][2]
@@ -126,14 +126,17 @@ def extact_soft_clipped_bases(read):
         # print(perfect)
         # print(align_score)
         # print(align[0][3])
+        # print(align_right_position)
+        # print(len(search))
 
         # position of alignment must be all the way to the right
         if align_right_position >= len(search):
-            # allow only one mismtach
-            if perfect-align_score <= 2:
+            # allow only one mismtach - Mismatches already taken care of above?
+            # if perfect-align_score <= 2:
+            if perfect-align_score <= 0:
                 return True
             else:
-                # more than one mistmach
+                # more than allowed number of mismatches
                 return False
         else:
             # match is not at the end of the leader
@@ -550,7 +553,6 @@ def main(args):
 
         orf_coverage[row.name]=median
     print("Done", file=sys.stderr)
-    print(orf_coverage)
 
     # read input bam file again
     inbamfile = pysam.AlignmentFile(args.bam, "rb")
@@ -595,7 +597,7 @@ def main(args):
         # # print(read.is_read1)
         # # print(read.get_tags())
         # print(read.cigar)
-        test = extact_soft_clipped_bases(read)
+        leader_search_result = extact_soft_clipped_bases(read)
         if read.query_name not in reads:
             reads[read.query_name] = []
         orf=None
@@ -604,13 +606,13 @@ def main(args):
             if row.end >= read.pos >= row.start:
                 orf = row.name
         if orf == None:
-            if test == True:
+            if leader_search_result == True:
                 orf = "novel_" + str(read.pos)
 
 
         reads[read.query_name].append(
             {
-                "sgRNA":test,
+                "sgRNA":leader_search_result,
                 "orf": orf,
                 "pos": read.pos,
                 "read": read
@@ -665,10 +667,12 @@ def main(args):
 
     for id,pair in reads.items():
 
-        # get the class and orf of the left hand read, this will be the classification and ORF for the pair
+        # get the class and orf of the left hand read, this will be the classification and ORF for the pair - sometimes right read looks like it has subgenomic evidence - there are likely false positives
+
         left_read = min(pair, key=lambda x: x['pos'])
         right_read = max(pair, key=lambda x: x['pos'])
-        read_class = left_read["sgRNA"]
+
+        read_class = left_read['sgRNA']
         orf = left_read["orf"]
         # print(orf)
 
@@ -696,7 +700,7 @@ def main(args):
             continue
 
         if orf not in orfs:
-            orfs[orf] = []
+            orfs[orf] = [left_read_object]
         else:
             orfs[orf].append(left_read_object)
 
@@ -712,19 +716,25 @@ def main(args):
 
     novel_count=0
     canonical = open(args.output_prefix+"_periscope_counts.csv","w")
-    canonical.write(",".join(["sample","orf","sgRNA_count","coverage","sgRPTM\n"]))
+    canonical.write(",".join(["sample","mapped_reads","orf","sgRNA_count","coverage", "sgRPTM","sgRPTT\n"]))
 
     novel = open(args.output_prefix+"_periscope_novel_counts.csv","w")
-    novel.write(",".join(["sample", "orf", "sgRNA_count", "coverage", "sgRPTM\n"]))
+    novel.write(",".join(["sample","mapped_reads", "orf", "sgRNA_count", "coverage", "sgRPTM","sgRPTT\n"]))
 
+    pp.pprint(orfs)
     for orf in orfs:
+        sgRPTT = len(orfs[orf]) / (mapped_reads / 1000)
         if "novel" not in orf:
-            print(orf)
-            canonical.write(args.sample+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(len(orfs[orf])/(orf_coverage[orf]/1000))+"\n")
+
+            sgRPTM = len(orfs[orf])/(orf_coverage[orf]/1000)
+            canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTM)+","+str(sgRPTT)+"\n")
         else:
-            novel.write(args.sample+","+orf+","+str(len(orfs[orf]))+","+"NA"+","+"NA"+"\n")
+            position = int(orf.split("_")[1])
+            coverage=get_coverage(position-20,position+20,inbamfile)
+            sgRPTM = len(orfs[orf])/(coverage/1000)
+            novel.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(coverage)+","+str(sgRPTM)+","+str(sgRPTT)+"\n")
             novel_count+=len(orfs[orf])
-    print(novel_count)
+
     canonical.close()
     novel.close()
 

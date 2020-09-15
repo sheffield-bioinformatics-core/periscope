@@ -7,6 +7,9 @@
 # NB500959:197:H75W3AFX2:2:11212:14327:14989    ORF7a   90   gRNA
 # NB500959:197:H75W3AFX2:4:11507:13616:10003    ORF7a   90  sgRNA longest leader
 # NB500959:197:H75W3AFX2:2:11306:20696:15959    ORF7a   90  gRNA
+# M01996:271:000000000-J3T3D:1:1101:23402:7678 has soem soft clipping but it is minimal - what is this one?
+# M01996:271:000000000-J3T3D:1:1106:16147:13747 borderline - probably not a match
+# M01996:271:000000000-J3T3D:1:2103:7946:12236 right read really messy but softclipped so matches somewhat to leader
 
 # TODO - I want some amplicon 86 reads that support E
 # TODO - I need some reads supporting 7a
@@ -72,6 +75,18 @@ truth = {
             "align_score": 12.0,
             "amplicon": 90,
             "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:1101:23402:7678":{
+
+            "soft_clip_check": False,
+            "class":"gRNA",
+            "align_score": 12.0,
+            "amplicon": 90,
+            "orf": None
+
+    },
+    "M01996:271:000000000-J3T3D:1:1101:20572:27704":{
+
     }
 
 
@@ -167,6 +182,9 @@ def test_extact_soft_clipped_bases():
 
     print(result)
     truth = {
+                'M01996:271:000000000-J3T3D:1:1101:23402:7678': False,
+                'M01996:271:000000000-J3T3D:1:1106:16147:13747': False,
+                'M01996:271:000000000-J3T3D:1:1101:20572:27704': False,
                 'NB500959:197:H75W3AFX2:1:11308:21480:4281': True,
                 'NB500959:197:H75W3AFX2:1:21109:16155:11370': False,
                 'NB500959:197:H75W3AFX2:1:21312:23610:4695': True,

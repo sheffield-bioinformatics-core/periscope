@@ -6,6 +6,7 @@ import os
 import snakemake
 import glob
 
+
 def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
@@ -24,8 +25,12 @@ def main():
                         default="/tmp")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
     parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
+    parser.add_argument('--log-level',dest='log_level',default="warning")
+
+
 
     args = parser.parse_args()
+
 
     # if technology is illumina then we need to know where fastqs are because they could be paired end
     # this will work with any fastq input type
