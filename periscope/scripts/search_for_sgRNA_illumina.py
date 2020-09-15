@@ -5,20 +5,17 @@ from Bio import pairwise2
 import pysam
 import argparse
 from pybedtools import *
-import datetime
-from artic.align_trim import find_primer
 from artic.vcftagprimersites import read_bed_file
 import sys
-import os
-import pprint as pp
-import snakemake
-from collections import namedtuple
-class PeriscopeRead(object):
-    def __init__(self, read):
-        self.read = read
 from numpy import median
-import time
 from tqdm import tqdm
+
+class ClassifiedRead():
+    def __init__(self,sgRNA: bool,orf: str,read: pysam.AlignedRead):
+        self.sgRNA = sgRNA
+        self.orf = orf
+        self.pos = read.pos
+        self.read = read
 
 def get_mapped_reads(bam):
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
@@ -47,14 +44,7 @@ def check_start(bed_object,read):
 
 
 def supplementary_method(read):
-    # print("is_supplementary")
-    # print(read.is_supplementary)
-    # print("start")
-    # print(read.pos)
-    # print("supplementary_start")
-    # print(read.next_reference_start)
-
-    # we don't need the supplementary alignment
+   # we don't need the supplementary alignment
     if read.is_supplementary:
         return "supplementary"
 
@@ -122,6 +112,11 @@ def extact_soft_clipped_bases(read):
         align_score=align[0][2]
         align_right_position = align[0][4]
 
+        logger.debug("Processing read: %s", read.query_name)
+        logger.debug("%s perfect score: %s", read.query_name,str(perfect))
+        logger.debug("%s actual score: %s", read.query_name, str(align_score))
+        logger.debug("%s alignment: %s", read.query_name, align)
+
         # print(align)
         # print(perfect)
         # print(align_score)
@@ -134,15 +129,19 @@ def extact_soft_clipped_bases(read):
             # allow only one mismtach - Mismatches already taken care of above?
             # if perfect-align_score <= 2:
             if perfect-align_score <= 0:
+                logger.debug("%s sgRNA: %s", read.query_name, True)
                 return True
             else:
                 # more than allowed number of mismatches
+                logger.debug("%s sgRNA: %s,%s", read.query_name, False,'too many mismatches')
                 return False
         else:
             # match is not at the end of the leader
+            logger.debug("%s sgRNA: %s,%s", read.query_name, False,'match not at end of leader')
             return False
     else:
         # No soft clipping at 5' end of read
+        logger.debug("%s sgRNA: %s,%s", read.query_name, False,'no soft-clipping')
         return False
 
 
@@ -153,105 +152,6 @@ def get_coverage(start,end,inbamfile):
     return median(coverage)
 
 
-
-
-
-def search_reads(read,search):
-    """
-    given a pysam read object and a search string perform a localms alignment
-    :param read: pysam read object
-    :param search: DNA search string e.g. ATGTGCTTGATGC
-    :return: dictionary containing the read_id, alignment score and the position of the read
-    """
-    align_score = pairwise2.align.localms(search, read.seq, 2, -2, -10, -.1,score_only=True)
-
-    return {
-        "read_id":  read.query_name,
-        "align_score": align_score,
-        "read_position": read.pos,
-        "sequence": read.seq
-    }
-
-
-def find_amplicon(read,primer_bed_object):
-    """
-    use artic code to find primers called "find_primers"
-    returns (1, 1, {'chrom': 'MN908947.3', 'start': 21357, 'end': 21386, 'Primer_ID': 'nCoV-2019_71_LEFT', 'PoolName': 'nCoV-2019_1', 'direction': '+'})
-    in the case of sgRNAs this code fails to find the correct primer for the + direction. This is actualy a clue that
-    this read is an sgRNA
-
-    :param read:
-    :param primer_bed_object:
-    :return: the amplicon of the read
-    """
-
-
-
-    # get the left primer
-
-    left_primer = find_primer(primer_bed_object, read.reference_start, '+')
-
-
-    # get the right primer
-    right_primer = find_primer(primer_bed_object, read.reference_end, '-')
-
-
-    # get the left primer amplicon (we don't actually use this)
-    left_amplicon = int(left_primer[2]['Primer_ID'].split("_")[1])
-    # get the right primer amplicon
-    right_amplicon = int(right_primer[2]['Primer_ID'].split("_")[1])
-
-    # WARNING - LEFT_AMPLICON IS NOT RELIABLE FOR SG_RNA
-
-    return dict(left_amplicon=left_amplicon,left_primer=left_primer,right_amplicon=right_amplicon,right_primer=right_primer)
-
-def classify_read(read,score,score_cutoff,orf,amplicons):
-    """
-    classify read based on leader alignment score and other metrics
-    :param score: the score
-    :param score_cutoff: the user provided cut-off
-    :return:
-    """
-
-    # some things I've learnt:
-    # - if amplicons match it's more likely to by a gRNA but that doesn't hold true for reads that span amplicons - so score should still be 1st port of call
-    # print(amplicons)
-    quality=None
-    if score > int(score_cutoff):
-        quality = "HQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
-    elif score > 30:
-        quality = "LQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
-    else:
-        if orf is not None:
-            quality = "LLQ"
-            read_class = "sgRNA"
-        else:
-            read_class = "gRNA"
-
-    # for those that have been classified as nsgRNA - do a final check - check not at amplicon edge
-    # we see a lot of false positives at read ends
-
-    if read_class == "nsgRNA":
-        primer_start = amplicons["left_primer"][2]["start"]-5
-        primer_end = amplicons["left_primer"][2]["end"]+5
-        if primer_start <= read.pos <= primer_end:
-            quality=None
-            read_class="gRNA"
-
-    if quality:
-        return read_class+"_"+quality
-    else:
-        return read_class
 
 
 def open_bed(bed):
@@ -281,252 +181,6 @@ def setup_counts(primer_bed_object):
     return total_counts
 
 
-def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_bed_object):
-    """
-    calculate normalised read counts on a per amplicon bases
-
-    :param mapped_reads: total mapped reads
-    :param total_counts: the total counts dictionary
-    :param outfile_amplicon: the amplicon outfile
-    :param orf_bed_object: the orf bed file object
-    :return: the total counts dictionary with normalisation added
-    """
-    done=[]
-    with open(outfile_amplicon, "w") as f:
-        header = ["sample", "amplicon", "mapped_reads", "orf", "quality", "gRNA_count", "gRPTH", "sgRNA_count", "sgRPHT",
-              "sgRPTg"]
-        f.write(",".join(header)+"\n")
-        for amplicon in total_counts:
-
-            # total count of gRNA for amplicon
-            amplicon_gRNA_count = len(total_counts[amplicon]["gRNA"])
-
-            # gRNA total count per 100l mapped reads
-            amplicon_gRPTH = amplicon_gRNA_count / (mapped_reads / 100000)
-
-            total_counts[amplicon]["gRPHT"] = {}
-
-            for quality in ["HQ", "LQ", "LLQ"]:
-                total_counts[amplicon]["sgRPHT_" + quality] = {}
-                total_counts[amplicon]["sgRPTg_" + quality] = {}
-                for orf in total_counts[amplicon]["sgRNA_" + quality]:
-                    total_counts[amplicon]["gRPHT"][orf] = amplicon_gRPTH
-
-                    amplicon_orf_sgRNA_count = len(total_counts[amplicon]["sgRNA_" + quality][orf])
-
-                    # normalised per 100k total mapped reads
-                    amplicon_orf_sgRPHT = amplicon_orf_sgRNA_count / (mapped_reads / 100000)
-
-                    total_counts[amplicon]["sgRPHT_" + quality][orf] = amplicon_orf_sgRPHT
-
-                    # normalised per 1000 gRNA reads from this amplicon
-                    try:
-                        amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
-                    except:
-                        amplicon_orf_sgRPTg = "NA"
-
-
-                    total_counts[amplicon]["sgRPTg_" + quality][orf] = amplicon_orf_sgRPTg
-
-                    line = []
-                    line.append(args.sample)
-                    line.append(str(amplicon))
-                    line.append(str(mapped_reads))
-                    line.append(str(orf))
-                    line.append(str(quality))
-                    line.append(str(amplicon_gRNA_count))
-                    line.append(str(amplicon_gRPTH))
-                    line.append(str(amplicon_orf_sgRNA_count))
-                    line.append(str(amplicon_orf_sgRPHT))
-                    line.append(str(amplicon_orf_sgRPTg))
-                    f.write(",".join(line)+"\n")
-
-            for quality in ["HQ", "LQ"]:
-                total_counts[amplicon]["nsgRPHT_" + quality] = {}
-                total_counts[amplicon]["nsgRPTg_" + quality] = {}
-                for orf in total_counts[amplicon]["nsgRNA_" + quality]:
-                    total_counts[amplicon]["gRPHT"][orf] = amplicon_gRPTH
-
-                    amplicon_orf_sgRNA_count = len(total_counts[amplicon]["nsgRNA_" + quality][orf])
-
-                    # normalised per 100k total mapped reads
-                    amplicon_orf_sgRPHT = amplicon_orf_sgRNA_count / (mapped_reads / 100000)
-
-                    total_counts[amplicon]["nsgRPHT_" + quality][orf] = amplicon_orf_sgRPHT
-
-                    # normalised per 1000 gRNA reads from this amplicon
-                    amplicon_orf_sgRPTg = amplicon_orf_sgRNA_count / (amplicon_gRNA_count / 1000)
-
-                    total_counts[amplicon]["nsgRPTg_" + quality][orf] = amplicon_orf_sgRPTg
-
-                    line = []
-                    line.append(args.sample)
-                    line.append(str(amplicon))
-                    line.append(str(mapped_reads))
-                    line.append(str(orf))
-                    line.append(str(quality))
-                    line.append(str(amplicon_gRNA_count))
-                    line.append(str(amplicon_gRPTH))
-                    line.append(str(amplicon_orf_sgRNA_count))
-                    line.append(str(amplicon_orf_sgRPHT))
-                    line.append(str(amplicon_orf_sgRPTg))
-                    f.write(",".join(line)+"\n")
-
-                    # read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])-1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),
-                    #                        from_string=True)
-                    if str(orf) not in done:
-                        # fixes bug where if the read maps to 0 end up with -1 as a position
-                        if int(orf.split("_")[1]) == 0:
-                            read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1])) + "\t" + str(
-                                orf.split("_")[1]) + "\t" + str(orf), from_string=True)
-                        else:
-                            read_feature = BedTool("MN908947.3" + "\t" + str(int(orf.split("_")[1]) - 1) + "\t" + str(orf.split("_")[1]) + "\t" + str(orf),from_string=True)
-                        orf_bed_object = orf_bed_object.cat(read_feature,postmerge=False)
-                        done.append(str(orf))
-
-
-    f.close()
-    # orf_bed_object=orf_bed_object.sort().merge(c=4,o="distinct")
-    return total_counts,orf_bed_object
-
-
-def summarised_counts_per_orf(total_counts,orf_bed_object):
-    """
-    summarise counts per ORF
-
-    sumarise the counts per ORF
-    :param total_counts: the total counts dictionary created by calculate_normalised_counts
-    :param orf_bed_object: the orf bed file object
-    :return: a final dictionary of counts and norm counts per ORF
-    """
-    result = {}
-    for orf in orf_bed_object:
-        if orf.name not in result:
-            result[orf.name] = {}
-            result[orf.name]["gRPHT"] = 0
-            result[orf.name]["amplicons"] = []
-            result[orf.name]["gRNA_count"] = 0
-            if "novel" in orf.name:
-                for quality in ["LQ", "HQ"]:
-                    result[orf.name]["nsgRNA_" + quality + "_count"] = 0
-            else:
-                for quality in ["LLQ", "LQ", "HQ"]:
-                    result[orf.name]["sgRNA_" + quality + "_count"] = 0
-
-        for amplicon in total_counts:
-            if orf.name in total_counts[amplicon]["gRPHT"]:
-                result[orf.name]["gRPHT"] += total_counts[amplicon]["gRPHT"][orf.name]
-                result[orf.name]["amplicons"].append(str(amplicon))
-                result[orf.name]["gRNA_count"] += len(total_counts[amplicon]["gRNA"])
-            if "novel" in orf.name:
-                for quality in ["LQ", "HQ"]:
-                    if orf.name in total_counts[amplicon]["nsgRNA_" + quality]:
-                        result[orf.name]["nsgRNA_" + quality + "_count"] += len(
-                            total_counts[amplicon]["nsgRNA_" + quality][orf.name])
-
-                    for metric in ["nsgRPHT", "nsgRPTg"]:
-                        qmetric = metric + "_" + quality
-                        if qmetric not in result[orf.name]:
-                            result[orf.name][qmetric] = 0
-                        if orf.name in total_counts[amplicon][qmetric]:
-                            result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
-
-            else:
-                for quality in ["LLQ", "LQ", "HQ"]:
-                    if orf.name in total_counts[amplicon]["sgRNA_" + quality]:
-                        result[orf.name]["sgRNA_" + quality + "_count"] += len(total_counts[amplicon]["sgRNA_" + quality][orf.name])
-
-                    for metric in ["sgRPHT", "sgRPTg"]:
-                        qmetric = metric + "_" + quality
-                        if qmetric not in result[orf.name]:
-                            result[orf.name][qmetric] = 0
-                        if orf.name in total_counts[amplicon][qmetric]:
-                            try:
-                                result[orf.name][qmetric] += total_counts[amplicon][qmetric][orf.name]
-                            except:
-                                result[orf.name][qmetric] = "NA"
-    return result
-
-def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel):
-    """
-    output the summarised counts from summarised_counts_per_orf
-
-    :param mapped_reads: mapped read count
-    :param result: the result dictionary created by summarised_counts_per_orf
-    :param outfile_counts: the outfile for the counts
-    :param outfile_counts_novel: the outfile for the novel counts
-    """
-    with open(outfile_counts,"w") as f:
-        header = ["sample", "orf", "mapped_reads", "amplicons","gRNA_count", "sgRNA_HQ_count", "sgRNA_LQ_count", "sgRNA_LLQ_count", "gRHPT", "sgRPTg_HQ", "sgRPTg_LQ", "sgRPTg_LLQ",
-                  "sgRPTg_ALL", "sgRPHT_HQ", "sgRPHT_LQ", "sgRPHT_LLQ", "sgRPHT_ALL"]
-        f.write(",".join(header)+"\n")
-        for orf in result:
-            if "novel" not in orf:
-                # construct output line
-                line = []
-                line.append(args.sample)
-                line.append(orf)
-                line.append(str(mapped_reads))
-                line.append("|".join(result[orf]["amplicons"]))
-                line.append(str(result[orf]["gRNA_count"]))
-                line.append(str(result[orf]["sgRNA_HQ_count"]))
-                line.append(str(result[orf]["sgRNA_LQ_count"]))
-                line.append(str(result[orf]["sgRNA_LLQ_count"]))
-                line.append(str(result[orf]["gRPHT"]))
-                line.append(str(result[orf]["sgRPTg_HQ"]))
-                line.append(str(result[orf]["sgRPTg_LQ"]))
-                line.append(str(result[orf]["sgRPTg_LLQ"]))
-                try:
-                    sgRPTg_all = sum([result[orf]["sgRPTg_HQ"], result[orf]["sgRPTg_LQ"], result[orf]["sgRPTg_LLQ"]])
-                except:
-                    sgRPTg_all = "NA"
-                line.append(str(sgRPTg_all))
-                line.append(str(result[orf]["sgRPHT_HQ"]))
-                line.append(str(result[orf]["sgRPHT_LQ"]))
-                line.append(str(result[orf]["sgRPHT_LLQ"]))
-                try:
-                    sgRPHT_all = sum([result[orf]["sgRPHT_HQ"], result[orf]["sgRPHT_LQ"], result[orf]["sgRPHT_LLQ"]])
-                except:
-                    sgRPHT_all = "NA"
-                line.append(str(sgRPHT_all))
-
-                f.write(",".join(line) + "\n")
-        f.close()
-    # deal with novel sgRNA seperatley
-    with open(outfile_counts_novel, "w") as f:
-        novel_header = ["sample", "orf", "mapped_reads", "amplicons", "gRNA_count", "nsgRNA_HQ_count", "nsgRNA_LQ_count",
-                        "gRHPT", "nsgRPTg_HQ", "nsgRPTg_LQ", "nsgRPTg_ALL", "nsgRPHT_HQ", "nsgRPHT_LQ", "nsgRPHT_ALL"]
-        f.write(",".join(novel_header) + "\n")
-        for orf in result:
-            if "novel" in orf:
-                # construct output line
-                line = []
-                line.append(args.sample)
-                line.append(orf)
-                line.append(str(mapped_reads))
-                line.append("|".join(result[orf]["amplicons"]))
-                line.append(str(result[orf]["gRNA_count"]))
-                line.append(str(result[orf]["nsgRNA_HQ_count"]))
-                line.append(str(result[orf]["nsgRNA_LQ_count"]))
-                line.append(str(result[orf]["gRPHT"]))
-                line.append(str(result[orf]["nsgRPTg_HQ"]))
-                line.append(str(result[orf]["nsgRPTg_LQ"]))
-                try:
-                    nsgRPTg_all = sum([result[orf]["nsgRPTg_HQ"], result[orf]["nsgRPTg_LQ"]])
-                except:
-                    nsgRPTg_all = "NA"
-                line.append(str(nsgRPTg_all))
-                line.append(str(result[orf]["nsgRPHT_HQ"]))
-                line.append(str(result[orf]["nsgRPHT_LQ"]))
-                try:
-                    nsgRPHT_all = sum([result[orf]["nsgRPHT_HQ"], result[orf]["nsgRPHT_LQ"]])
-                except:
-                    nsgRPTg_all = "NA"
-                line.append(str(nsgRPHT_all))
-
-                f.write(",".join(line) + "\n")
-        f.close()
-
 
 def main(args):
 
@@ -546,13 +200,13 @@ def main(args):
 
     orf_coverage={}
     # get coverage for each orf
-    print("Getting Coverage for Canonical ORF Sites....", file=sys.stderr)
+    logger.warning("getting coverage at canonical ORF sites")
     for row in orf_bed_object:
 
         median=get_coverage(row.start,row.end,inbamfile)
 
         orf_coverage[row.name]=median
-    print("Done", file=sys.stderr)
+    logger.warning("getting coverage at canonical ORF sites....DONE")
 
     # read input bam file again
     inbamfile = pysam.AlignmentFile(args.bam, "rb")
@@ -569,7 +223,7 @@ def main(args):
 
     total_counts = setup_counts(primer_bed_object)
     # for every read let's decide if it's sgRNA or not
-    print("Processing " + str(mapped_reads) + " reads", file=sys.stderr)
+    logger.warning("Processing " + str(mapped_reads) + " reads")
     result={}
     count=0
     orfs={}
@@ -611,73 +265,29 @@ def main(args):
 
 
         reads[read.query_name].append(
-            {
-                "sgRNA":leader_search_result,
-                "orf": orf,
-                "pos": read.pos,
-                "read": read
-            }
+
+            ClassifiedRead(sgRNA=leader_search_result,orf=orf,read=read)
+
+
         )
 
-        # read is sgRNA
-        # orf=None
-        # if test == True:
-        #     count+=1
-        #     orf=None
-        #     # canonical ORFS
-        #     for row in orf_bed_object:
-        #         # see if read falls within ORF start location
-        #         if row.end >= read.pos >= row.start:
-        #             orf = row.name
-        #             if orf not in orfs:
-        #                 orfs[orf]=[]
-        #             else:
-        #                 orfs[orf].append(read)
-        #     # not a canonical ORF so it's novel
-        #     if orf == None:
-        #         name = "novel_" + str(read.pos)
-        #         if name not in orfs:
-        #             orfs[name]=[]
-        #         orfs[name].append(read)
-        #
-        # read.set_tag('XO', orf)
-
-
-        # we have to deal with mate pairs, so if we already have a sgRNA call for that
-        # mate pair then we just ignore
-        # TODO: keep a dictionary of read classification and when you get to mate classify same?
-
-        # old_result = None
-        # if read.query_name in result:
-        #     old_result = result[read.query_name]
-        # if old_result == None:
-        #     result[read.query_name] = test
-        #     if test == True:
-        #         read.set_tag('XC', "sgRNA")
-        #     else:
-        #         read.set_tag('XC',"gRNA")
-        # elif old_result == False:
-        #     if test == True:
-        #         result[read.query_name] = True
-        #         read.set_tag('XC',"sgRNA")
-
-        # outbamfile.write(read)
 
     # now we have all the reads classified, deal with pairs
-
+    logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
+    logger.info("dealing with read pairs")
     for id,pair in reads.items():
 
         # get the class and orf of the left hand read, this will be the classification and ORF for the pair - sometimes right read looks like it has subgenomic evidence - there are likely false positives
 
-        left_read = min(pair, key=lambda x: x['pos'])
-        right_read = max(pair, key=lambda x: x['pos'])
+        left_read = min(pair, key=lambda x: x.pos)
 
-        read_class = left_read['sgRNA']
-        orf = left_read["orf"]
-        # print(orf)
+        right_read = max(pair, key=lambda x: x.pos)
 
-        left_read_object = left_read["read"]
-        right_read_object = right_read["read"]
+        read_class = left_read.sgRNA
+        orf = left_read.orf
+
+        left_read_object = left_read.read
+        right_read_object = right_read.read
 
         left_read_object.set_tag('XO', 'orf')
         right_read_object.set_tag('XO', 'orf')
@@ -696,6 +306,7 @@ def main(args):
 
         if orf == None:
             continue
+
         if read_class == False:
             continue
 
@@ -704,11 +315,7 @@ def main(args):
         else:
             orfs[orf].append(left_read_object)
 
-
-    # print(orfs)
-
-
-
+    logger.info("dealing with read pairs....DONE")
 
     outbamfile.close()
     pysam.sort("-o", args.output_prefix + "_periscope_sorted.bam",  args.output_prefix + "_periscope.bam")
@@ -721,11 +328,11 @@ def main(args):
     novel = open(args.output_prefix+"_periscope_novel_counts.csv","w")
     novel.write(",".join(["sample","mapped_reads", "orf", "sgRNA_count", "coverage", "sgRPTM","sgRPTT\n"]))
 
-    pp.pprint(orfs)
+    logger.info("summarising results")
+
     for orf in orfs:
         sgRPTT = len(orfs[orf]) / (mapped_reads / 1000)
         if "novel" not in orf:
-
             sgRPTM = len(orfs[orf])/(orf_coverage[orf]/1000)
             canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTM)+","+str(sgRPTT)+"\n")
         else:
@@ -738,71 +345,16 @@ def main(args):
     canonical.close()
     novel.close()
 
+    logger.info("summarising results....DONE")
+
     amplicons = open(args.output_prefix + "_periscope_amplicons.csv", "w")
     amplicons.write("not used yet")
     amplicons.close()
-    # print(count)
-    # print(orfs)
-
-        # find the amplicon for the read
-
-    #     amplicons = find_amplicon(read, primer_bed_object)
-    #
-    #     total_counts[amplicons["right_amplicon"]]["total_reads"] += 1
-    #
-    #
-    #     # we are searching for the leader sequence
-    #     search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-    #
-    #     # search for the sequence
-    #     result = search_reads(read,search)
-    #
-    #     # add orf location to result
-    #     result["read_orf"] = check_start(orf_bed_object, read)
-    #
-    #     # classify read based on prior information
-    #     read_class = classify_read(read,result["align_score"],args.score_cutoff,result["read_orf"],amplicons)
-    #
-    #     # store the attributes we have calculated with the read as tags
-    #     read.set_tag('XS', result["align_score"])
-    #     read.set_tag('XA', amplicons["right_amplicon"])
-    #     read.set_tag('XC', read_class)
-    #     read.set_tag('XO', result["read_orf"])
-    #
-    #
-    #     # ok now add this info to a dictionary for later processing
-    #     if "sgRNA" in read_class:
-    #         if result["read_orf"] is None:
-    #             result["read_orf"] = "novel_"+str(read.pos)
-    #
-    #         if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
-    #             total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
-    #         total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read)
-    #     else:
-    #         total_counts[amplicons["right_amplicon"]][read_class].append(read)
-    #
-    #     # write the annotated read to a bam file
-    #     outbamfile.write(read)
-    #
-    # outbamfile.close()
-
-    #
-    #
-    # # define ORF bed object because we cleared our session
-    # orf_bed_object = open_bed(args.orf_bed)
-    #
-    # # go through each amplicon and do normalisations
-    # outfile_amplicons = args.output_prefix + "_periscope_amplicons.csv"
-    # total_counts,orf_bed_object = calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicons,orf_bed_object)
-    # # summarise result into ORFs
-    # result = summarised_counts_per_orf(total_counts,orf_bed_object)
-    # # output summarised counts
-    # outfile_counts = args.output_prefix + "_periscope_counts.csv"
-    # outfile_counts_novel = args.output_prefix + "_periscope_novel_counts.csv"
-    # output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel)
 
 
 if __name__ == '__main__':
+
+
 
     parser = argparse.ArgumentParser(description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data')
     parser.add_argument('--bam', help='bam file',default="The bam file of full artic reads")
@@ -815,6 +367,11 @@ if __name__ == '__main__':
     parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
 
+
+    logger = logging
+    logger.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+    logger.info("staring periscope")
 
     args = parser.parse_args()
 

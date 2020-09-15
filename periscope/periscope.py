@@ -5,7 +5,7 @@ import sys
 import os
 import snakemake
 import glob
-
+import logging
 
 def main():
 
@@ -25,11 +25,21 @@ def main():
                         default="/tmp")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
     parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
-    parser.add_argument('--log-level',dest='log_level',default="warning")
-
+    parser.add_argument(
+        '-d', '--debug',
+        help="Print lots of debugging statements",
+        action="store_const", dest="loglevel", const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        help="Be verbose",
+        action="store_const", dest="loglevel", const=logging.INFO,
+    )
 
 
     args = parser.parse_args()
+
 
 
     # if technology is illumina then we need to know where fastqs are because they could be paired end
@@ -84,26 +94,26 @@ def main():
     scripts_dir= os.path.join(dir, 'scripts')
 
 
-    config = {
-        "fastq_dir": args.fastq_dir,
-        "extension": extension,
-        "gzipped":gzipped,
-        "fastq": args.fastq,
-        "output_prefix": args.output_prefix,
-        "scripts_dir":scripts_dir,
-        "resources_dir":args.resources,
-        "amplicon_bed": amplicons_bed,
-        "interest_bed": interest_bed,
-        "primer_bed": primers_bed,
-        "orf_bed": "orf_start.bed",
-        "score_cutoff": args.score_cutoff,
-        "reference_fasta": 'nCoV-2019.reference.fasta',
-        "sample": args.sample,
-        "threads": args.threads,
-        "tmp":args.tmp,
-        "technology":args.technology
-    }
-    print(primers_bed)
+    config = dict(
+        fastq_dir=args.fastq_dir,
+        extension=extension,
+        gzipped=gzipped,
+        fastq=args.fastq,
+        output_prefix=args.output_prefix,
+        scripts_dir=scripts_dir,
+        resources_dir=args.resources,
+        amplicon_bed=amplicons_bed,
+        interest_bed=interest_bed,
+        primer_bed=primers_bed,
+        orf_bed='orf_start.bed',
+        score_cutoff=args.score_cutoff,
+        reference_fasta='nCoV-2019.reference.fasta',
+        sample=args.sample,
+        threads=args.threads,
+        tmp=args.tmp,
+        technology=args.technology
+    )
+
 
 
     snakefile = os.path.join(scripts_dir, 'Snakefile')
