@@ -25,17 +25,7 @@ def main():
                         default="/tmp")
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
     parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
-    parser.add_argument(
-        '-d', '--debug',
-        help="Print lots of debugging statements",
-        action="store_const", dest="loglevel", const=logging.DEBUG,
-        default=logging.WARNING,
-    )
-    parser.add_argument(
-        '-v', '--verbose',
-        help="Be verbose",
-        action="store_const", dest="loglevel", const=logging.INFO,
-    )
+
 
 
     args = parser.parse_args()

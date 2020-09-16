@@ -117,13 +117,6 @@ def extact_soft_clipped_bases(read):
         logger.debug("%s actual score: %s", read.query_name, str(align_score))
         logger.debug("%s alignment: %s", read.query_name, align)
 
-        # print(align)
-        # print(perfect)
-        # print(align_score)
-        # print(align[0][3])
-        # print(align_right_position)
-        # print(len(search))
-
         # position of alignment must be all the way to the right
         if align_right_position >= len(search):
             # allow only one mismtach - Mismatches already taken care of above?
@@ -323,23 +316,23 @@ def main(args):
 
     novel_count=0
     canonical = open(args.output_prefix+"_periscope_counts.csv","w")
-    canonical.write(",".join(["sample","mapped_reads","orf","sgRNA_count","coverage", "sgRPTM","sgRPTT\n"]))
+    canonical.write(",".join(["sample","mapped_reads","orf","sgRNA_count","coverage", "sgRPTL","sgRPHT\n"]))
 
     novel = open(args.output_prefix+"_periscope_novel_counts.csv","w")
-    novel.write(",".join(["sample","mapped_reads", "orf", "sgRNA_count", "coverage", "sgRPTM","sgRPTT\n"]))
+    novel.write(",".join(["sample","mapped_reads", "orf", "sgRNA_count", "coverage", "sgRPTL","sgRPHT\n"]))
 
     logger.info("summarising results")
 
     for orf in orfs:
-        sgRPTT = len(orfs[orf]) / (mapped_reads / 1000)
+        sgRPHT = len(orfs[orf]) / (mapped_reads / 10000)
         if "novel" not in orf:
-            sgRPTM = len(orfs[orf])/(orf_coverage[orf]/1000)
-            canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTM)+","+str(sgRPTT)+"\n")
+            sgRPTL = len(orfs[orf])/(orf_coverage[orf]/1000)
+            canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTL)+","+str(sgRPHT)+"\n")
         else:
             position = int(orf.split("_")[1])
             coverage=get_coverage(position-20,position+20,inbamfile)
-            sgRPTM = len(orfs[orf])/(coverage/1000)
-            novel.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(coverage)+","+str(sgRPTM)+","+str(sgRPTT)+"\n")
+            sgRPTL = len(orfs[orf])/(coverage/1000)
+            novel.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(coverage)+","+str(sgRPTL)+","+str(sgRPHT)+"\n")
             novel_count+=len(orfs[orf])
 
     canonical.close()
