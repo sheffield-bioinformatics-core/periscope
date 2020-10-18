@@ -140,6 +140,8 @@ def extact_soft_clipped_bases(read):
 
 def get_coverage(start,end,inbamfile):
     coverage = []
+    if start < 0:
+        start=1
     for pileupcolumn in inbamfile.pileup("MN908947.3", int(start), int(end)):
             coverage.append(pileupcolumn.n)
     return median(coverage)
