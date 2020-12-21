@@ -42,7 +42,7 @@ def main():
     # check if fastq_dir exists
     print(args.fastq_dir)
     gzipped=False
-    extension=".fastq"
+    extension="fastq"
     if args.fastq_dir:
         if not os.path.exists(args.fastq_dir):
             print("%s fastq directory must exist" % (args.fastq_dir), file=sys.stderr)

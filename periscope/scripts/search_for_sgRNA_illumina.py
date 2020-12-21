@@ -284,8 +284,8 @@ def main(args):
         left_read_object = left_read.read
         right_read_object = right_read.read
 
-        left_read_object.set_tag('XO', 'orf')
-        right_read_object.set_tag('XO', 'orf')
+        left_read_object.set_tag('XO', orf)
+        right_read_object.set_tag('XO', orf)
 
         if read_class == True:
             left_read_object.set_tag('XC', 'sgRNA')
