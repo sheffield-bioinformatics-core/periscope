@@ -20,4 +20,4 @@ dependencies:
   - pytest=5.4.2
   - pip=20.0.2
   - pip:
-    - git+https://github.com/artic-network/fieldbioinformatics.git@3b6c1f3
+    - git+https://github.com/artic-network/fieldbioinformatics.git@1.1.1
