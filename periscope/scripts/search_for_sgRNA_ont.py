@@ -593,10 +593,12 @@ def main(args):
                     else:
                         total_counts[amplicon][sgclass][orf] = counts[amplicon][sgclass][orf]
 
+    finalise(args, total_counts)
+
     output_bams = [file+"_periscope_temp.bam" for file in files]
     print(output_bams)
     pysam.merge(*["-f",args.output_prefix + "_periscope.bam"]+output_bams)
-    pysam.index(args.output_prefix + "_periscope.bam")
+    # pysam.index(args.output_prefix + "_periscope.bam")
     # print(processed[5])
 
 
@@ -610,7 +612,7 @@ def main(args):
     #             print(total_counts[amplicon][sgclass][orf])
     #
     # exit()
-    finalise(args,total_counts)
+
 
 if __name__ == '__main__':
 
