@@ -1,6 +1,5 @@
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/periscope.png "periscope")
 
-
 # periscope
 
 A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic network amplicon sequencing data.
@@ -43,7 +42,7 @@ periscope \
     --artic-primers <ASSAY_VERSION; V1,V2,V3 or 2kb> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --technology <SEQUECNING TECH; ont or illumina> \
-    --threads <THREADS_FOR_MAPPING> 
+    --threads <THREADS> 
 ```
 
 `output-prefix` will be the directory and start of the filename for the output.
