@@ -1,6 +1,5 @@
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/periscope.png "periscope")
 
-**v0.0.8 With improved Illumina sgRNA detection**
 
 # periscope
 
@@ -12,6 +11,7 @@ Initial classification of reads into sub-genomic or not based on https://www.bio
 Please cite our pre-print if you use this tool in any publications:
 
 https://www.biorxiv.org/content/10.1101/2020.07.01.181867v1
+
 
 # Requirements
 periscope runs on MacOS and Linux. We have also confirmed the tool runs under windows 10 unix subsystem.
