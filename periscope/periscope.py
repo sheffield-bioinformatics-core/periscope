@@ -26,7 +26,48 @@ def main():
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
     parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
 
+    print("""
+             /yddmmmddds:                         
+           -hd/` `:hd-`+dy::::::::--`             
+          .dh`     `yd. .dmsoooooosshho.          
+          sm-  :o/  .my  +m/         -yd+         
+          hd  -mmm:  hd  .ms           om:        
+          hd  -mmm:  dd  .ms           -mo        
+          om:  -+:  -ms  +mhoo+-       .ms        
+          `dh.     `hd. -dy:::sd/      .ms        
+           .yd/.`./hd:-ods`   .ms      .ms        
+            `:syyyhhyyyo-     .ms      .ms        
+               ````````       .ms      .ms        
+                              .ms      .ms        
+                              .ms      .ms        
+                              .ms      .ms        
+ ``            ```            .ms      .ms        
+ `````       `.```````      ``-ms      .ms   `.`  
+ ```````````.` ```` ``.`````.`.ms      .ms`.``    
+  ``.``     ``.`````.`````  `.-ms      .ms`  `.`` 
+oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
+.-:shs:```./yho:--:ohy:.``.:yho:--:ohy/:ms.:shs:-.
+ ```.+yhyyhy/.``.```./yhyyhy/.``````./yhdhyy+.``  
+   `..``.````.``    `.``..```.`     `.``..` `.`   
+  `````````.` ``..``` ```.`.` ```````  ``..`` ``` 
+   `..`     `.``    `.`     `.`     `.`     `..`  
+ ```  ``````` ``````  ``...`` ```.``   `````` ````
+    ```     ```     ```    ``.`     `.`     `.`   
+  ``` ``````` ``..``` ``````   `````` ``...``   . 
+    `..`    ``.`    `..`    `..`    `.`     `..`  
+      ```````          `.`..`          ```..`     
+                  _                          
+  █ ▄▄  ▄███▄   █▄▄▄▄ ▄█    ▄▄▄▄▄   ▄█▄    ████▄ █ ▄▄  ▄███▄   
+█   █ █▀   ▀  █  ▄▀ ██   █     ▀▄ █▀ ▀▄  █   █ █   █ █▀   ▀  
+█▀▀▀  ██▄▄    █▀▀▌  ██ ▄  ▀▀▀▀▄   █   ▀  █   █ █▀▀▀  ██▄▄    
+█     █▄   ▄▀ █  █  ▐█  ▀▄▄▄▄▀    █▄  ▄▀ ▀████ █     █▄   ▄▀ 
+ █    ▀███▀     █    ▐            ▀███▀         █    ▀███▀   
+  ▀            ▀                                 ▀          
+    """)
 
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit(1)
 
     args = parser.parse_args()
 
