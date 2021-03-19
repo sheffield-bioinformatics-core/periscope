@@ -8,6 +8,8 @@ def main(args):
     for pileupcolumn in samfile.pileup('MN908947.3', 28279, 28281):
         for pileupread in pileupcolumn.pileups:
             id = pileupread.alignment.query_name
+            if pileupread.alignment.tags[12][1] != 'gRNA':
+                continue
             if pileupread.query_position is None:
                 continue
             if id not in result:
@@ -34,6 +36,8 @@ def main(args):
 
     for pileupcolumn in samfile.pileup('MN908947.3', 23061, 23063):
         for pileupread in pileupcolumn.pileups:
+            if pileupread.alignment.tags[12][1] != 'gRNA':
+                continue
             if pileupread.query_position is None:
                 continue
             if pileupcolumn.pos == 23063:
