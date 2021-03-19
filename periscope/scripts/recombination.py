@@ -41,7 +41,7 @@ def main(args):
                 continue
             if pileupread.query_position is None:
                 continue
-            if pileupcolumn.pos == 23063:
+            if pileupcolumn.pos == 23062:
                 # result[id][28279]=pileupread.alignment.query_sequence[pileupread.query_position]
                 base=pileupread.alignment.query_sequence[pileupread.query_position]
                 if base == "A":
