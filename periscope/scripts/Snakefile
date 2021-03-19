@@ -101,7 +101,7 @@ rule split:
         threads = config.get("threads"),
         prefix = expand("{output_prefix}.split.",output_prefix=config.get("output_prefix")),
     shell:
-        "samtools view -H {input.bam} > {output.header} && samtools view {input.bam} > {output.sam} && split -d -l $(echo `wc -l {output.sam} | cut -f1 -d\" \"` /{params.threads} | bc) {output.sam} {params.prefix}"
+        "samtools view -H {input.bam} > {output.header} && samtools view {input.bam} > {output.sam} && split -d -l $(echo `wc -l {output.sam} | cut -f1 -d\" \"` /{params.threads}-1 | bc) {output.sam} {params.prefix}"
 
 rule reheader:
     input:

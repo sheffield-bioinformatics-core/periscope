@@ -63,6 +63,7 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
 █     █▄   ▄▀ █  █  ▐█  ▀▄▄▄▄▀    █▄  ▄▀ ▀████ █     █▄   ▄▀ 
  █    ▀███▀     █    ▐            ▀███▀         █    ▀███▀   
   ▀            ▀                                 ▀          
+                                                    Vanguard
     """)
 
     if len(sys.argv) < 2:
@@ -81,7 +82,7 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
             exit(1)
 
     # check if fastq_dir exists
-    print(args.fastq_dir)
+
     gzipped=False
     extension="fastq"
     if args.fastq_dir:

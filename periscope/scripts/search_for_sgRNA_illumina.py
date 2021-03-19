@@ -361,7 +361,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample', help='sample id',default="SAMPLE")
     parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
-
+    parser.add_argument('--threads', help='display progress bar', default=1)
 
     logger = logging
     logger.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
