@@ -8,6 +8,8 @@ def main(args):
     for pileupcolumn in samfile.pileup('MN908947.3', 28279, 28281):
         for pileupread in pileupcolumn.pileups:
             id = pileupread.alignment.query_name
+            if pileupread.query_position is None:
+                continue
             if id not in result:
                 # result[id]={}
                 result[id]=[]
@@ -32,6 +34,8 @@ def main(args):
 
     for pileupcolumn in samfile.pileup('MN908947.3', 23061, 23063):
         for pileupread in pileupcolumn.pileups:
+            if pileupread.query_position is None:
+                continue
             if pileupcolumn.pos == 23063:
                 # result[id][28279]=pileupread.alignment.query_sequence[pileupread.query_position]
                 base=pileupread.alignment.query_sequence[pileupread.query_position]
