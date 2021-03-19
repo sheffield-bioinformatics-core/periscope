@@ -1,6 +1,7 @@
 import argparse
 import sys
 import pysam
+import os
 
 def main(args):
     result={}
@@ -54,7 +55,9 @@ def main(args):
         if "".join(result[read]) == "GAT":
             counts["GAT"]+=1
 
-    print(counts)
+    sample=os.path.basename(args.bam).replace("_periscope.bam","")
+    print("sample,N:D3:GAT,N:D3:CTA,S:N501:AAT,S:N501:TAT")
+    print(sample+","+str(counts["GAT"])+","+str(counts["CTA"])+","+str(counts["N501Y"]["A"])+","+str(counts["N501Y"]["T"]))
 
 
 if __name__ == '__main__':
