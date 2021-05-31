@@ -72,8 +72,6 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
 
     args = parser.parse_args()
 
-
-
     # if technology is illumina then we need to know where fastqs are because they could be paired end
     # this will work with any fastq input type
     if args.technology == "illumina":
@@ -91,19 +89,16 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
             exit(1)
         #here we should find out if fastqs are compressed or not - need to cat or zcat depending
         else:
-            directory_listing = glob.glob(args.fastq_dir)
-            if ".fq" in directory_listing:
-                extension=".fq"
-            if ".fq.gz" in directory_listing:
+            directory_listing = glob.glob(args.fastq_dir+"/*")
+            if any(".fq" in file for file in directory_listing):
+                extension="fq"
+            if any(".fq.gz" in file for file in directory_listing):
                 gzipped=True
-                extension=".fq.gz"
-            if ".fastq.gz" in directory_listing:
+                extension="fq.gz"
+            if any(".fastq.gz" in file for file in directory_listing):
                 gzipped=True
-                extension = ".fastq.gz"
+                extension = "fastq.gz"
 
-
-    print(args.fastq)
-    print(type(args.fastq))
     if len(args.fastq)>0:
         for fastq in args.fastq:
             if not os.path.exists(fastq):

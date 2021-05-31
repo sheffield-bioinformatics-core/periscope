@@ -4,7 +4,24 @@ import pysam
 import os
 
 def main(args):
+
     result={}
+
+    counts = {
+        "CTA": 0,
+        "GAT": 0,
+        "N501Y": {
+            "A": 0,
+            "T": 0
+        },
+        "coverage": {
+            28279: 0,
+            28280: 0,
+            28281: 0,
+            23062: 0,
+        }
+    }
+
     samfile = pysam.Samfile(args.bam, "rb")
     for pileupcolumn in samfile.pileup('MN908947.3', 28279, 28281):
         for pileupread in pileupcolumn.pileups:
@@ -26,14 +43,7 @@ def main(args):
                 # result[id][28281] = pileupread.alignment.query_sequence[pileupread.query_position]
                 result[id].append(pileupread.alignment.query_sequence[pileupread.query_position])
 
-    counts = {
-        "CTA": 0,
-        "GAT": 0,
-        "N501Y": {
-            "A": 0,
-            "T": 0
-        }
-    }
+    print(result)
 
     for pileupcolumn in samfile.pileup('MN908947.3', 23061, 23063):
         for pileupread in pileupcolumn.pileups:
@@ -59,6 +69,9 @@ def main(args):
     print("sample,N:D3:GAT,N:D3:CTA,S:N501:AAT,S:N501:TAT")
     print(sample+","+str(counts["GAT"])+","+str(counts["CTA"])+","+str(counts["N501Y"]["A"])+","+str(counts["N501Y"]["T"]))
 
+    for i in result:
+        if result[i] == ['C','T','A']:
+            print(i)
 
 if __name__ == '__main__':
 
