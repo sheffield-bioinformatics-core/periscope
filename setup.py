@@ -10,6 +10,8 @@ setup(
              'periscope/scripts/search_for_sgRNA_illumina.py',
              'periscope/scripts/variant_expression.py'
              ],
+    package_dir={'periscope': 'periscope'},
+    package_data={'periscope':['resources/*']},
     url='',
     license='',
     author='Matthew Parker',
