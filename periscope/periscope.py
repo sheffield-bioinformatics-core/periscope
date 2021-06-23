@@ -81,6 +81,12 @@ def main():
     dir = os.path.join(os.path.dirname(__file__))
     scripts_dir= os.path.join(dir, 'scripts')
 
+    # check if resources argument given, else set default to install path
+    if args.resources is None:
+        resources_dir = os.path.join(dir, 'resources')
+    else:
+        resources_dir = args.resources
+
 
     config = dict(
         fastq_dir=args.fastq_dir,
@@ -89,7 +95,7 @@ def main():
         fastq=args.fastq,
         output_prefix=args.output_prefix,
         scripts_dir=scripts_dir,
-        resources_dir=args.resources,
+        resources_dir=resources_dir,
         amplicon_bed=amplicons_bed,
         interest_bed=interest_bed,
         primer_bed=primers_bed,
