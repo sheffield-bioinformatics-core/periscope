@@ -21,6 +21,7 @@ import time
 from tqdm import tqdm
 
 def get_mapped_reads(bam):
+    # find out how many mapped reads there are for bam
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
     return mapped_reads
 
@@ -112,27 +113,27 @@ def classify_read(read,score,score_cutoff,orf,amplicons):
     # some things I've learnt:
     # - if amplicons match it's more likely to by a gRNA but that doesn't hold true for reads that span amplicons - so score should still be 1st port of call
     # print(amplicons)
-    quality=None
+
+    # assign quality
     if score > int(score_cutoff):
         quality = "HQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
     elif score > 30:
         quality = "LQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
     else:
-        if orf is not None:
-            quality = "LLQ"
-            read_class = "sgRNA"
-        else:
-            read_class = "gRNA"
+        quality = "LLQ"
+
+    #assign read_class    
+    if orf == "ORF1a" or orf == "ORF1b":
+        quality = None
+        read_class = "gRNA"
+    elif orf is not None:
+        read_class = "sgRNA"
+    elif quality == "HQ" or quality == "LQ":
+        read_class = "nsgRNA"
+    else:
+        quality = None
+        read_class = "gRNA"
+        
 
     # for those that have been classified as nsgRNA - do a final check - check not at amplicon edge
     # we see a lot of false positives at read ends
