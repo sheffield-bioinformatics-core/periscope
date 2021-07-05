@@ -23,7 +23,8 @@
 # e8981b0c-21fe-4920-80e3-530197f3d15e  novel_20315   67  sgRNA   Novel sgRNA
 # 07b675cc-6b19-4ed4-9341-6576ad51957f  None    67  gRNA
 # 76aaf579-4754-4bbe-b001-4ac2d6f76533  novel_19548   65  gRNA    listed as novel, but on edge of amplicon
-# 1e0b6284-ec08-4451-b0fc-3f7f36e75b31 None    97  gRNA
+# 1e0b6284-ec08-4451-b0fc-3f7f36e75b31  None    97  gRNA
+# 53619614-d945-4c47-88f0-119852dc80fe  ORF1a    1  gRNA    ORF1a assigned to gRNA not sgRNA
 
 # TODO - I want some amplicon 86 reads that support E
 # TODO - I need some reads supporting 7a
@@ -171,6 +172,12 @@ truth = {
         "align_score": 14.0,
         "amplicon": 97,
         "orf": None
+    },
+    "53619614-d945-4c47-88f0-119852dc80fe": {
+        "class": "gRNA",
+        "align_score": 64.0,
+        "amplicon": 1,
+        "orf": "ORF1a"
     }
 
 
@@ -184,12 +191,11 @@ import pysam
 import os
 from artic.vcftagprimersites import read_bed_file
 
-
 dirname = os.path.dirname(__file__)
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads("reads.sam")
-    assert mapped_reads == 23
+    assert mapped_reads == 24
 
 
 def test_check_start():
