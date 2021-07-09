@@ -15,7 +15,7 @@
 # TODO - I need some reads supporting 7a
 
 # Import all the methods we need
-from periscope.scripts.search_for_sgRNA_illumina import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed, supplementary_method, extact_soft_clipped_bases
+from periscope.scripts.search_for_sgRNA_illumina import get_mapped_reads, check_start, open_bed, supplementary_method, extact_soft_clipped_bases
 
 # this is the truth for these reads
 
@@ -112,14 +112,15 @@ from artic.vcftagprimersites import read_bed_file
 
 
 dirname = os.path.dirname(__file__)
+reads_file = os.path.join(dirname,"reads.sam")
 
 def test_mapped_reads():
-    mapped_reads = get_mapped_reads("reads.sam")
+    mapped_reads = get_mapped_reads(reads_file)
     assert mapped_reads == 23
 
 
 def test_check_start():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
     for read in inbamfile:
@@ -137,7 +138,7 @@ def test_check_start():
 
 
 def test_supplementary_method():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
 
         print("------")
@@ -147,7 +148,7 @@ def test_supplementary_method():
         print(supplementary_method(read))
 
 def test_extact_soft_clipped_bases():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     result = {}
     count = 0
     for read in inbamfile:
@@ -199,57 +200,57 @@ def test_extact_soft_clipped_bases():
     assert result == truth
 
 
-def test_search_reads():
+# def test_search_reads():
 
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    for read in inbamfile:
-        if read.is_supplementary:
-            # print("%s skipped as supplementary" %
-            #       (read.query_name), file=sys.stderr)
-            continue
-        if read.is_secondary:
-            # print("%s skipped as supplementary" %
-            #       (read.query_name), file=sys.stderr)
-            continue
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+#     for read in inbamfile:
+#         if read.is_supplementary:
+#             # print("%s skipped as supplementary" %
+#             #       (read.query_name), file=sys.stderr)
+#             continue
+#         if read.is_secondary:
+#             # print("%s skipped as supplementary" %
+#             #       (read.query_name), file=sys.stderr)
+#             continue
 
-        search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-        result = search_reads(read, search)
-        print(read.query_name)
-        print(read.flag)
-        print(result)
-        assert result["align_score"] == truth[read.query_name]["align_score"]
-
-
-def test_find_amplicon():
-
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
-    primer_bed_object = read_bed_file(filename)
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    for read in inbamfile:
-        amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
-        assert amplicon == truth[read.query_name]["amplicon"]
+#         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+#         result = search_reads(read, search)
+#         print(read.query_name)
+#         print(read.flag)
+#         print(result)
+#         assert result["align_score"] == truth[read.query_name]["align_score"]
 
 
+# def test_find_amplicon():
+
+#     filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+#     primer_bed_object = read_bed_file(filename)
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+#     for read in inbamfile:
+#         amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
+#         assert amplicon == truth[read.query_name]["amplicon"]
 
 
-def test_classify_read():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
 
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
-    primer_bed_object = read_bed_file(filename)
 
-    filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
-    bed_object = open_bed(filename)
+# def test_classify_read():
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
 
-    for read in inbamfile:
-        print(read.query_name)
-        search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-        search_result = search_reads(read,search)
-        amplicons = find_amplicon(read, primer_bed_object)
-        orf = check_start(bed_object, read)
-        result = classify_read(read,search_result["align_score"],50,orf,amplicons)
-        print(result)
-        assert result == truth[read.query_name]["class"]
+#     filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+#     primer_bed_object = read_bed_file(filename)
+
+#     filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
+#     bed_object = open_bed(filename)
+
+#     for read in inbamfile:
+#         print(read.query_name)
+#         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+#         search_result = search_reads(read,search)
+#         amplicons = find_amplicon(read, primer_bed_object)
+#         orf = check_start(bed_object, read)
+#         result = classify_read(read,search_result["align_score"],50,orf,amplicons)
+#         print(result)
+#         assert result == truth[read.query_name]["class"]
 
 
 def test_pybedtools():

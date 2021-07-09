@@ -192,14 +192,15 @@ import os
 from artic.vcftagprimersites import read_bed_file
 
 dirname = os.path.dirname(__file__)
+reads_file = os.path.join(dirname,"reads.sam")
 
 def test_mapped_reads():
-    mapped_reads = get_mapped_reads("reads.sam")
+    mapped_reads = get_mapped_reads(reads_file)
     assert mapped_reads == 24
 
 
 def test_check_start():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
     for read in inbamfile:
@@ -209,7 +210,7 @@ def test_check_start():
 
 def test_search_reads():
 
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
         result = search_reads(read, search)
@@ -220,7 +221,7 @@ def test_find_amplicon():
 
     filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
         amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
         assert amplicon == truth[read.query_name]["amplicon"]
@@ -229,7 +230,7 @@ def test_find_amplicon():
 
 
 def test_classify_read():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
 
     filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)
