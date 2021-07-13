@@ -63,30 +63,65 @@ truth = {
         "orf": None
     },
     "NB500959:197:H75W3AFX2:1:21109:16155:11370": {
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
-        },
-    "NB500959:197:H75W3AFX2:3:21408:12117:17553":{
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "orf": None
     },
-    "M01996:271:000000000-J3T3D:1:1101:23402:7678":{
-
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
-
+    "NB500959:197:H75W3AFX2:3:21408:12117:17553": {
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "orf": None
     },
-    "M01996:271:000000000-J3T3D:1:1101:20572:27704":{
-
+    "M01996:271:000000000-J3T3D:1:1101:23402:7678": {
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:1101:20572:27704": {
+    #need to check these values, example values for now
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:1106:16147:13747": {
+    #need to check these values, example values for now
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:2103:7946:12236": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "orf": None
+    },
+    "NB500959:197:H75W3AFX2:2:11204:7045:4512": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "orf": None
+    },
+    "NB500959:197:H75W3AFX2:4:11602:22252:8721": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "orf": None
     }
 
 
@@ -116,7 +151,7 @@ reads_file = os.path.join(dirname,"reads.sam")
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads(reads_file)
-    assert mapped_reads == 23
+    assert mapped_reads == 33
 
 
 def test_check_start():
@@ -195,7 +230,8 @@ def test_extact_soft_clipped_bases():
                 'NB500959:197:H75W3AFX2:3:21408:12117:17553': False,
                 'NB500959:197:H75W3AFX2:4:11403:13826:18844': True,
                 'NB500959:197:H75W3AFX2:4:11507:13616:10003': True,
-                'NB500959:197:H75W3AFX2:4:11602:22252:8721': True
+                'NB500959:197:H75W3AFX2:4:11602:22252:8721': True,
+                'M01996:271:000000000-J3T3D:1:2103:7946:12236': True
             }
     assert result == truth
 
