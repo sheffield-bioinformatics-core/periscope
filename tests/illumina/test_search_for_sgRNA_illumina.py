@@ -136,6 +136,14 @@ truth = {
         "amplicon": 0,
         "left_right": ["N", "novel_28548"],
         "orf": "N"
+    },
+    "NB551552:52:H2LJKBGXF:4:22612:16519:4773":{
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": ["ORF1a", None],
+        "orf": "ORF1a"
     }
 
 
@@ -165,7 +173,7 @@ reads_file = os.path.join(dirname,"reads.sam")
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads(reads_file)
-    assert mapped_reads == 33
+    assert mapped_reads == 35
 
 
 def test_check_start():
@@ -246,7 +254,8 @@ def test_extact_soft_clipped_bases():
                 'NB500959:197:H75W3AFX2:4:11403:13826:18844': True,
                 'NB500959:197:H75W3AFX2:4:11507:13616:10003': True,
                 'NB500959:197:H75W3AFX2:4:11602:22252:8721': True,
-                'M01996:271:000000000-J3T3D:1:2103:7946:12236': True
+                'M01996:271:000000000-J3T3D:1:2103:7946:12236': True,
+                'NB551552:52:H2LJKBGXF:4:22612:16519:4773': False
             }
     assert result == truth
 
