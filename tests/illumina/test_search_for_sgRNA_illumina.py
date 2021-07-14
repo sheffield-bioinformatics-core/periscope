@@ -25,6 +25,7 @@ truth = {
         "class":"sgRNA",
         "align_score":64.0,
         "amplicon": 90,
+        "left_right": ["ORF7a"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:1:21312:23610:4695": {
@@ -32,6 +33,7 @@ truth = {
         "class":"sgRNA",
         "align_score":52.0,
         "amplicon": 90,
+        "left_right": ["ORF7a", "novel_27654"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:1:11308:21480:4281": {
@@ -39,6 +41,7 @@ truth = {
         "class": "sgRNA",
         "align_score": 32.0,
         "amplicon": 90,
+        "left_right": ["ORF7a", "novel_27533"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:2:11212:14327:14989": {
@@ -46,6 +49,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "NB500959:197:H75W3AFX2:4:11507:13616:10003": {
@@ -53,6 +57,7 @@ truth = {
         "class":"sgRNA",
         "align_score":64.0,
         "amplicon": 90,
+        "left_right": ["ORF7a"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:2:11306:20696:15959": {
@@ -60,6 +65,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "NB500959:197:H75W3AFX2:1:21109:16155:11370": {
@@ -67,6 +73,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "NB500959:197:H75W3AFX2:3:21408:12117:17553": {
@@ -74,6 +81,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "M01996:271:000000000-J3T3D:1:1101:23402:7678": {
@@ -81,6 +89,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "M01996:271:000000000-J3T3D:1:1101:20572:27704": {
@@ -89,6 +98,7 @@ truth = {
         "class": "gRNA",
         "align_score": 0,
         "amplicon": 0,
+        "left_right": [None],
         "orf": None
     },
     "M01996:271:000000000-J3T3D:1:1106:16147:13747": {
@@ -97,6 +107,7 @@ truth = {
         "class": "gRNA",
         "align_score": 0,
         "amplicon": 0,
+        "left_right": [None],
         "orf": None
     },
     "M01996:271:000000000-J3T3D:1:2103:7946:12236": {
@@ -105,7 +116,8 @@ truth = {
         "class": "sgRNA",
         "align_score": 0,
         "amplicon": 0,
-        "orf": None
+        "left_right": ["novel_24503", "novel_24794"],
+        "orf": "novel_24503"
     },
     "NB500959:197:H75W3AFX2:2:11204:7045:4512": {
     #need to check these values, example values for now
@@ -113,7 +125,8 @@ truth = {
         "class": "sgRNA",
         "align_score": 0,
         "amplicon": 0,
-        "orf": None
+        "left_right": ["N", "novel_28283"],
+        "orf": "N"
     },
     "NB500959:197:H75W3AFX2:4:11602:22252:8721": {
     #need to check these values, example values for now
@@ -121,7 +134,8 @@ truth = {
         "class": "sgRNA",
         "align_score": 0,
         "amplicon": 0,
-        "orf": None
+        "left_right": ["N", "novel_28548"],
+        "orf": "N"
     }
 
 
@@ -168,8 +182,9 @@ def test_check_start():
             #       (read.query_name), file=sys.stderr)
             continue
         print(read.query_name)
-        orf = check_start(bed_object,read)
-        assert orf == truth[read.query_name]["orf"]
+        orf = check_start(read, truth[read.query_name]["soft_clip_check"], bed_object)
+        print(truth[read.query_name]["left_right"])
+        assert orf in truth[read.query_name]["left_right"]
 
 
 def test_supplementary_method():
