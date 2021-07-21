@@ -30,7 +30,7 @@
 # TODO - I need some reads supporting 7a
 
 # Import all the methods we need
-from periscope.scripts.search_for_sgRNA_ont import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed
+from periscope.scripts.search_for_sgRNA_ont import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed, calculate_normalised_counts, setup_counts
 
 # this is the truth for these reads
 
@@ -178,6 +178,11 @@ truth = {
         "align_score": 64.0,
         "amplicon": 1,
         "orf": "ORF1a"
+    },
+    "amplicons": {
+        "V1": 98,
+        "V2": 98,
+        "V3": 98
     }
 
 
@@ -193,11 +198,18 @@ from artic.vcftagprimersites import read_bed_file
 
 dirname = os.path.dirname(__file__)
 reads_file = os.path.join(dirname,"reads.sam")
+primer_file = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
 
 def test_mapped_reads():
     mapped_reads = get_mapped_reads(reads_file)
     assert mapped_reads == 24
 
+def test_setup_counts():
+    for primer_set in truth["amplicons"]:
+        primer_file = os.path.join(dirname, "../../periscope/resources/artic_primers_{}.bed".format(primer_set))
+        primer_bed_object = read_bed_file(primer_file)
+        total_counts = setup_counts(primer_bed_object)
+        assert len(total_counts) == truth["amplicons"][primer_set]
 
 def test_check_start():
     inbamfile = pysam.AlignmentFile(reads_file, "rb")
