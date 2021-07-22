@@ -48,10 +48,8 @@ def check_start(read, leader_search_result, orfBed):
         # see if read falls within ORF start location
         if row.end >= read.reference_start >= row.start:
             orf = row.name
-            print(orf)
     if orf == None:
         if leader_search_result == True:
-            print(read.reference_start)
             orf = "novel_" + str(read.reference_start)
     return orf
 
@@ -333,7 +331,7 @@ def main(args):
     logger.info("summarising results")
 
     for orf in orfs:
-        sgRPHT = len(orfs[orf]) / (mapped_reads / 10000)
+        sgRPHT = len(orfs[orf]) / (mapped_reads / 100000)
         if "novel" not in orf:
             sgRPTL = len(orfs[orf])/(orf_coverage[orf]/1000)
             canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTL)+","+str(sgRPHT)+"\n")
