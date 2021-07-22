@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--fastq',dest='fastq',help='if you already have a single fastq then you can use this flag instead, if illumina paired end separate fastq by space', nargs='+',required=False,default=[])
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
-    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1, V2, V3\n* 2kb (for the UCL longer amplicons)', default="V1")
+    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1, V2, V3\n* 2kb (for the UCL longer amplicons)\n* midnight (1.2kb midnight amplicons)', default="V1")
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
@@ -68,7 +68,7 @@ def main():
 
     # check if version number is correct
     version = args.artic_primers
-    if version not in ["V1", "V2", "V3","2kb"]:
+    if version not in ["V1", "V2", "V3","2kb", "midnight"]:
         print("%s artic primer version incorrect" % (version), file=sys.stderr)
         exit(1)
     else:
