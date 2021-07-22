@@ -21,25 +21,36 @@ def get_mapped_reads(bam):
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
     return mapped_reads
 
-def check_start(bed_object,read):
-    """
-    find out where the read is in a bed file, in this case the ORF starts
-    :param bed_object: bedtools object
-    :param read: pysam read object
-    :return: the orf
-    """
+# def check_start(bed_object,read):
+#     """
+#     find out where the read is in a bed file, in this case the ORF starts
+#     :param bed_object: bedtools object
+#     :param read: pysam read object
+#     :return: the orf
+#     """
 
-    # reads with a pos of 0 make this fail so puting in try except works
-    try:
-        read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
-        intersect = bed_object.intersect(read_feature)
-        orf=intersect[0].name
-        # if len(intersect) > 1:
-        #     print("odd")
-    except:
-        orf=None
-    # remove bedtools objects from temp
-    cleanup()
+#     # reads with a pos of 0 make this fail so puting in try except works
+#     try:
+#         read_feature = BedTool(read.reference_name + "\t" + str(read.pos) + "\t" + str(read.pos), from_string=True)
+#         intersect = bed_object.intersect(read_feature)
+#         orf=intersect[0].name
+#         # if len(intersect) > 1:
+#         #     print("odd")
+#     except:
+#         orf=None
+#     # remove bedtools objects from temp
+#     cleanup()
+#     return orf
+
+def check_start(read, leader_search_result, orfBed):
+    orf=None
+    for row in orfBed:
+        # see if read falls within ORF start location
+        if row.end >= read.reference_start >= row.start:
+            orf = row.name
+    if orf == None:
+        if leader_search_result == True:
+            orf = "novel_" + str(read.reference_start)
     return orf
 
 
@@ -247,21 +258,15 @@ def main(args):
         # # print(read.get_tags())
         # print(read.cigar)
         leader_search_result = extact_soft_clipped_bases(read)
+
         if read.query_name not in reads:
             reads[read.query_name] = []
-        orf=None
-        for row in orf_bed_object:
-            # see if read falls within ORF start location
-            if row.end >= read.pos >= row.start:
-                orf = row.name
-        if orf == None:
-            if leader_search_result == True:
-                orf = "novel_" + str(read.pos)
 
+        orfRead = check_start(read, leader_search_result, orf_bed_object)
 
         reads[read.query_name].append(
 
-            ClassifiedRead(sgRNA=leader_search_result,orf=orf,read=read)
+            ClassifiedRead(sgRNA=leader_search_result,orf=orfRead,read=read)
 
 
         )
@@ -326,7 +331,7 @@ def main(args):
     logger.info("summarising results")
 
     for orf in orfs:
-        sgRPHT = len(orfs[orf]) / (mapped_reads / 10000)
+        sgRPHT = len(orfs[orf]) / (mapped_reads / 100000)
         if "novel" not in orf:
             sgRPTL = len(orfs[orf])/(orf_coverage[orf]/1000)
             canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTL)+","+str(sgRPHT)+"\n")

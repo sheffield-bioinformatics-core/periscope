@@ -21,6 +21,7 @@ import time
 from tqdm import tqdm
 
 def get_mapped_reads(bam):
+    # find out how many mapped reads there are for bam
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
     return mapped_reads
 
@@ -112,27 +113,27 @@ def classify_read(read,score,score_cutoff,orf,amplicons):
     # some things I've learnt:
     # - if amplicons match it's more likely to by a gRNA but that doesn't hold true for reads that span amplicons - so score should still be 1st port of call
     # print(amplicons)
-    quality=None
+
+    # assign quality
     if score > int(score_cutoff):
         quality = "HQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
     elif score > 30:
         quality = "LQ"
-        if orf is not None:
-            read_class = "sgRNA"
-        else:
-            read_class = "nsgRNA"
-
     else:
-        if orf is not None:
-            quality = "LLQ"
-            read_class = "sgRNA"
-        else:
-            read_class = "gRNA"
+        quality = "LLQ"
+
+    #assign read_class    
+    if orf == "ORF1a" or orf == "ORF1b":
+        quality = None
+        read_class = "gRNA"
+    elif orf is not None:
+        read_class = "sgRNA"
+    elif quality == "HQ" or quality == "LQ":
+        read_class = "nsgRNA"
+    else:
+        quality = None
+        read_class = "gRNA"
+        
 
     # for those that have been classified as nsgRNA - do a final check - check not at amplicon edge
     # we see a lot of false positives at read ends
@@ -173,7 +174,7 @@ def setup_counts(primer_bed_object):
     for primer in primer_bed_object:
         amplicon = int(primer["Primer_ID"].split("_")[1])
         if amplicon not in total_counts:
-            total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'gRNA': [], 'sgRNA_HQ': {}, 'sgRNA_LQ':{}, 'sgRNA_LLQ':{}, 'nsgRNA_HQ':{}, 'nsgRNA_LQ':{}}
+            total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'gRNA': {}, 'sgRNA_HQ': {}, 'sgRNA_LQ':{}, 'sgRNA_LLQ':{}, 'nsgRNA_HQ':{}, 'nsgRNA_LQ':{}}
     return total_counts
 
 
@@ -195,12 +196,21 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
         for amplicon in total_counts:
 
             # total count of gRNA for amplicon
-            amplicon_gRNA_count = len(total_counts[amplicon]["gRNA"])
+            amplicon_gRNA_count = 0
 
-            # gRNA total count per 100l mapped reads
+            for orf in total_counts[amplicon]["gRNA"]:
+                amplicon_gRNA_count += len(total_counts[amplicon]["gRNA"][orf])
+            
+            total_counts[amplicon]["gRNA_count"] = amplicon_gRNA_count
+
+            # gRNA total count per 100k mapped reads
             amplicon_gRPTH = amplicon_gRNA_count / (mapped_reads / 100000)
 
             total_counts[amplicon]["gRPHT"] = {}
+
+            for orf in total_counts[amplicon]["gRNA"]:
+                if orf is not None:
+                    total_counts[amplicon]["gRPHT"][orf] = amplicon_gRPTH
 
             for quality in ["HQ", "LQ", "LLQ"]:
                 total_counts[amplicon]["sgRPHT_" + quality] = {}
@@ -313,7 +323,7 @@ def summarised_counts_per_orf(total_counts,orf_bed_object):
             if orf.name in total_counts[amplicon]["gRPHT"]:
                 result[orf.name]["gRPHT"] += total_counts[amplicon]["gRPHT"][orf.name]
                 result[orf.name]["amplicons"].append(str(amplicon))
-                result[orf.name]["gRNA_count"] += len(total_counts[amplicon]["gRNA"])
+                result[orf.name]["gRNA_count"] += total_counts[amplicon]["gRNA_count"]
             if "novel" in orf.name:
                 for quality in ["LQ", "HQ"]:
                     if orf.name in total_counts[amplicon]["nsgRNA_" + quality]:
@@ -497,11 +507,12 @@ def main(args):
             if result["read_orf"] is None:
                 result["read_orf"] = "novel_"+str(read.pos)
 
-            if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
-                total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
-            total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read)
-        else:
-            total_counts[amplicons["right_amplicon"]][read_class].append(read)
+        if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
+            total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
+            
+        total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read)
+        #else:
+        #    total_counts[amplicons["right_amplicon"]][read_class].append(read)
 
         # write the annotated read to a bam file
         outbamfile.write(read)
