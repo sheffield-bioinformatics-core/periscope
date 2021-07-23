@@ -40,7 +40,7 @@ periscope \
     --fastq <FULL_PATH_OF_FASTQ_FILE(s)> \ (space separated list of fastq files, you MUST use this for Illumina data)
     --output-prefix <PREFIX> \
     --sample <SAMPLE_NAME> \
-    --artic-primers <ASSAY_VERSION; V1,V2,V3,2kb,midnight> \
+    --artic-primers <ASSAY_VERSION; V1,V2,V3,V4,2kb,midnight> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --technology <SEQUECNING TECH; ont or illumina> \
     --threads <THREADS_FOR_MAPPING> 
@@ -184,9 +184,9 @@ pytest test_search_for_sgRNA.py
 
 ## Custom Amplicons File
 Each line must be an amplicon entry with 4, tab-delimited, features:
-* Chrom - name for the chromosome entry on which the feature exists
-* Start - zero-based starting position of the amplicon in the chromosome
-* End - one-based ending position of the amplicon in the chromosome
+* Chrom - name for the reference sequence
+* Start - zero-based starting position of the amplicon in the ref seq
+* End - one-based ending position of the amplicon in the ref seq
 * Name - name for the amplicon
 
 Example amplicons.bed file:
@@ -202,10 +202,10 @@ MN908947.3	1573	1964	nCoV-2019_6
 
 ## Custom Primers File
 Each line must be a primer entry with 5, tab-delimited, features:
-* Chrom - name for the chromosome entry on which the feature exists
-* Start - zero-based starting position of the primer in the chromosome
-* End - one-based ending position of the primer in the chromosome
-* Primer ID - ID of the primer, including the primer direction (LEFT or RIGHT)
+* Chrom - name for the reference sequence
+* Start - zero-based starting position of the primer in the ref seq
+* End - one-based ending position of the primer in the ref seq
+* Primer ID - ID of the primer, including the amplicon number (inbetween underscores) and the primer direction (LEFT or RIGHT)
 * Primer Pool - primer pool assignment
 
 Example primers.bed file:
