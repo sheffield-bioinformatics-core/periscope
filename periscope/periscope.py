@@ -9,12 +9,12 @@ import logging
 
 def main():
 
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,description='periscopre: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,description='periscope: Search for sgRNA reads in artic network SARS-CoV-2 sequencing data. A tool from Sheffield Bioinformatics Core/Florey Institute',usage='''periscope [options]''')
     parser.add_argument('--fastq-dir',dest='fastq_dir', help='the folder containing the raw pass demultiplexed fastqs from the artic protocol, if this is illumina data the tool expects a file labelled R1 and R2 in this dir.', default=None,required=False)
     parser.add_argument('--fastq',dest='fastq',help='if you already have a single fastq then you can use this flag instead, if illumina paired end separate fastq by space', nargs='+',required=False,default=[])
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
-    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1, V2, V3\n* 2kb (for the UCL longer amplicons)\n* midnight (1.2kb midnight amplicons)', default="V1")
+    parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1 (default), V2, V3\n* 2kb (for the UCL longer amplicons)\n* midnight (1.2kb midnight amplicons)\n* for custom primers provide path to amplicons file first and primers file second', nargs='*', default="V1")
     parser.add_argument('--threads', dest='threads', help='number of threads',
                         default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
@@ -66,16 +66,6 @@ def main():
                 print("%s fastq file must exist" % (fastq), file=sys.stderr)
                 exit(1)
 
-    # check if version number is correct
-    version = args.artic_primers
-    if version not in ["V1", "V2", "V3","2kb", "midnight"]:
-        print("%s artic primer version incorrect" % (version), file=sys.stderr)
-        exit(1)
-    else:
-        amplicons_bed="artic_amplicons_{}.bed".format(version)
-        primers_bed="artic_primers_{}.bed".format(version)
-        interest_bed = "artic_amplicons_of_interest.bed"
-
 
     # run snakemake pipeline 1st
     dir = os.path.join(os.path.dirname(__file__))
@@ -86,6 +76,27 @@ def main():
         resources_dir = os.path.join(dir, 'resources')
     else:
         resources_dir = args.resources
+        
+    
+    #check if version number is correct or if resource files exist when using custom primers
+    version = args.artic_primers
+    interest_bed = "artic_amplicons_of_interest.bed"
+    
+    if version[0] in ["V1", "V2", "V3","2kb", "midnight"]:
+        amplicons_bed=os.path.join(resources_dir, "artic_amplicons_{}.bed".format(version[0]))
+        primers_bed=os.path.join(resources_dir, "artic_primers_{}.bed".format(version[0]))
+    elif len(version)>1:
+        amplicons_bed=version[0]
+        primers_bed=version[1]
+
+        for file in [amplicons_bed, primers_bed]:
+            if not os.path.exists(file):
+                print("Cannot find resource file {}".format(file), file=sys.stderr)
+                exit(1)
+    else:
+        print("{} artic primer version incorrect".format(version[0]), file=sys.stderr)
+        exit(1)
+
 
 
     config = dict(

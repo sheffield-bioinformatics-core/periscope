@@ -104,8 +104,8 @@ rule periscope:
         score_cutoff = config.get("score_cutoff"),
         sample = config.get("sample"),
         orf_bed = expand("{resources_dir}/{orf_bed}",resources_dir=config.get("resources_dir"),orf_bed=config.get("orf_bed")),
-        primer_bed = expand("{resources_dir}/{primer_bed}",resources_dir=config.get("resources_dir"),primer_bed=config.get("primer_bed")),
-        amplicon_bed =expand("{resources_dir}/{amplicon_bed}",resources_dir=config.get("resources_dir"),amplicon_bed=config.get("amplicon_bed")),
+        primer_bed = expand("{primer_bed}",resources_dir=config.get("resources_dir"),primer_bed=config.get("primer_bed")),
+        amplicon_bed =expand("{amplicon_bed}",resources_dir=config.get("resources_dir"),amplicon_bed=config.get("amplicon_bed")),
         tmp = config.get("tmp")
     shell:
         "python {params.search} --bam {input.bam} --score-cutoff {params.score_cutoff} --output-prefix {params.output_prefix} --score-cutoff {params.score_cutoff} --sample {params.sample} --orf-bed {params.orf_bed} --primer-bed {params.primer_bed} --amplicon-bed {params.amplicon_bed} --tmp {params.tmp}"
