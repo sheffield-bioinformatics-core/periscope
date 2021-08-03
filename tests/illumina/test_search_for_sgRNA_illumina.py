@@ -15,7 +15,7 @@
 # TODO - I need some reads supporting 7a
 
 # Import all the methods we need
-from periscope.scripts.search_for_sgRNA_illumina import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed, supplementary_method, extact_soft_clipped_bases
+from periscope.scripts.search_for_sgRNA_illumina import get_mapped_reads, check_start, open_bed, supplementary_method, extact_soft_clipped_bases
 
 # this is the truth for these reads
 
@@ -25,6 +25,7 @@ truth = {
         "class":"sgRNA",
         "align_score":64.0,
         "amplicon": 90,
+        "left_right": ["ORF7a"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:1:21312:23610:4695": {
@@ -32,6 +33,7 @@ truth = {
         "class":"sgRNA",
         "align_score":52.0,
         "amplicon": 90,
+        "left_right": ["ORF7a", "novel_27654"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:1:11308:21480:4281": {
@@ -39,6 +41,7 @@ truth = {
         "class": "sgRNA",
         "align_score": 32.0,
         "amplicon": 90,
+        "left_right": ["ORF7a", "novel_27533"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:2:11212:14327:14989": {
@@ -46,6 +49,7 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "NB500959:197:H75W3AFX2:4:11507:13616:10003": {
@@ -53,6 +57,7 @@ truth = {
         "class":"sgRNA",
         "align_score":64.0,
         "amplicon": 90,
+        "left_right": ["ORF7a"],
         "orf": "ORF7a"
     },
     "NB500959:197:H75W3AFX2:2:11306:20696:15959": {
@@ -60,33 +65,85 @@ truth = {
         "class":"gRNA",
         "align_score": 12.0,
         "amplicon": 90,
+        "left_right": [None],
         "orf": None
     },
     "NB500959:197:H75W3AFX2:1:21109:16155:11370": {
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
-        },
-    "NB500959:197:H75W3AFX2:3:21408:12117:17553":{
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "left_right": [None],
+        "orf": None
     },
-    "M01996:271:000000000-J3T3D:1:1101:23402:7678":{
-
-            "soft_clip_check": False,
-            "class":"gRNA",
-            "align_score": 12.0,
-            "amplicon": 90,
-            "orf": None
-
+    "NB500959:197:H75W3AFX2:3:21408:12117:17553": {
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "left_right": [None],
+        "orf": None
     },
-    "M01996:271:000000000-J3T3D:1:1101:20572:27704":{
-
+    "M01996:271:000000000-J3T3D:1:1101:23402:7678": {
+        "soft_clip_check": False,
+        "class":"gRNA",
+        "align_score": 12.0,
+        "amplicon": 90,
+        "left_right": [None],
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:1101:20572:27704": {
+    #need to check these values, example values for now
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": [None],
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:1106:16147:13747": {
+    #need to check these values, example values for now
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": [None],
+        "orf": None
+    },
+    "M01996:271:000000000-J3T3D:1:2103:7946:12236": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": ["novel_24503", "novel_24794"],
+        "orf": "novel_24503"
+    },
+    "NB500959:197:H75W3AFX2:2:11204:7045:4512": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": ["N", "novel_28283"],
+        "orf": "N"
+    },
+    "NB500959:197:H75W3AFX2:4:11602:22252:8721": {
+    #need to check these values, example values for now
+        "soft_clip_check": True,
+        "class": "sgRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": ["N", "novel_28548"],
+        "orf": "N"
+    },
+    "NB551552:52:H2LJKBGXF:4:22612:16519:4773":{
+        "soft_clip_check": False,
+        "class": "gRNA",
+        "align_score": 0,
+        "amplicon": 0,
+        "left_right": ["ORF1a", None],
+        "orf": "ORF1a"
     }
 
 
@@ -112,14 +169,15 @@ from artic.vcftagprimersites import read_bed_file
 
 
 dirname = os.path.dirname(__file__)
+reads_file = os.path.join(dirname,"reads.sam")
 
 def test_mapped_reads():
-    mapped_reads = get_mapped_reads("reads.sam")
-    assert mapped_reads == 23
+    mapped_reads = get_mapped_reads(reads_file)
+    assert mapped_reads == 35
 
 
 def test_check_start():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
     for read in inbamfile:
@@ -132,12 +190,13 @@ def test_check_start():
             #       (read.query_name), file=sys.stderr)
             continue
         print(read.query_name)
-        orf = check_start(bed_object,read)
-        assert orf == truth[read.query_name]["orf"]
+        orf = check_start(read, truth[read.query_name]["soft_clip_check"], bed_object)
+        print(truth[read.query_name]["left_right"])
+        assert orf in truth[read.query_name]["left_right"]
 
 
 def test_supplementary_method():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
 
         print("------")
@@ -147,7 +206,7 @@ def test_supplementary_method():
         print(supplementary_method(read))
 
 def test_extact_soft_clipped_bases():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     result = {}
     count = 0
     for read in inbamfile:
@@ -194,62 +253,64 @@ def test_extact_soft_clipped_bases():
                 'NB500959:197:H75W3AFX2:3:21408:12117:17553': False,
                 'NB500959:197:H75W3AFX2:4:11403:13826:18844': True,
                 'NB500959:197:H75W3AFX2:4:11507:13616:10003': True,
-                'NB500959:197:H75W3AFX2:4:11602:22252:8721': True
+                'NB500959:197:H75W3AFX2:4:11602:22252:8721': True,
+                'M01996:271:000000000-J3T3D:1:2103:7946:12236': True,
+                'NB551552:52:H2LJKBGXF:4:22612:16519:4773': False
             }
     assert result == truth
 
 
-def test_search_reads():
+# def test_search_reads():
 
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    for read in inbamfile:
-        if read.is_supplementary:
-            # print("%s skipped as supplementary" %
-            #       (read.query_name), file=sys.stderr)
-            continue
-        if read.is_secondary:
-            # print("%s skipped as supplementary" %
-            #       (read.query_name), file=sys.stderr)
-            continue
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+#     for read in inbamfile:
+#         if read.is_supplementary:
+#             # print("%s skipped as supplementary" %
+#             #       (read.query_name), file=sys.stderr)
+#             continue
+#         if read.is_secondary:
+#             # print("%s skipped as supplementary" %
+#             #       (read.query_name), file=sys.stderr)
+#             continue
 
-        search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-        result = search_reads(read, search)
-        print(read.query_name)
-        print(read.flag)
-        print(result)
-        assert result["align_score"] == truth[read.query_name]["align_score"]
-
-
-def test_find_amplicon():
-
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
-    primer_bed_object = read_bed_file(filename)
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
-    for read in inbamfile:
-        amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
-        assert amplicon == truth[read.query_name]["amplicon"]
+#         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+#         result = search_reads(read, search)
+#         print(read.query_name)
+#         print(read.flag)
+#         print(result)
+#         assert result["align_score"] == truth[read.query_name]["align_score"]
 
 
+# def test_find_amplicon():
+
+#     filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+#     primer_bed_object = read_bed_file(filename)
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+#     for read in inbamfile:
+#         amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
+#         assert amplicon == truth[read.query_name]["amplicon"]
 
 
-def test_classify_read():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
 
-    filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
-    primer_bed_object = read_bed_file(filename)
 
-    filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
-    bed_object = open_bed(filename)
+# def test_classify_read():
+#     inbamfile = pysam.AlignmentFile("reads.sam", "rb")
 
-    for read in inbamfile:
-        print(read.query_name)
-        search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
-        search_result = search_reads(read,search)
-        amplicons = find_amplicon(read, primer_bed_object)
-        orf = check_start(bed_object, read)
-        result = classify_read(read,search_result["align_score"],50,orf,amplicons)
-        print(result)
-        assert result == truth[read.query_name]["class"]
+#     filename = os.path.join(dirname, "../periscope/resources/artic_primers_V3.bed")
+#     primer_bed_object = read_bed_file(filename)
+
+#     filename = os.path.join(dirname, "../periscope/resources/orf_start.bed")
+#     bed_object = open_bed(filename)
+
+#     for read in inbamfile:
+#         print(read.query_name)
+#         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
+#         search_result = search_reads(read,search)
+#         amplicons = find_amplicon(read, primer_bed_object)
+#         orf = check_start(bed_object, read)
+#         result = classify_read(read,search_result["align_score"],50,orf,amplicons)
+#         print(result)
+#         assert result == truth[read.query_name]["class"]
 
 
 def test_pybedtools():

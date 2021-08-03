@@ -23,13 +23,14 @@
 # e8981b0c-21fe-4920-80e3-530197f3d15e  novel_20315   67  sgRNA   Novel sgRNA
 # 07b675cc-6b19-4ed4-9341-6576ad51957f  None    67  gRNA
 # 76aaf579-4754-4bbe-b001-4ac2d6f76533  novel_19548   65  gRNA    listed as novel, but on edge of amplicon
-# 1e0b6284-ec08-4451-b0fc-3f7f36e75b31 None    97  gRNA
+# 1e0b6284-ec08-4451-b0fc-3f7f36e75b31  None    97  gRNA
+# 53619614-d945-4c47-88f0-119852dc80fe  ORF1a    1  gRNA    ORF1a assigned to gRNA not sgRNA
 
 # TODO - I want some amplicon 86 reads that support E
 # TODO - I need some reads supporting 7a
 
 # Import all the methods we need
-from periscope.scripts.search_for_sgRNA_ont import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed
+from periscope.scripts.search_for_sgRNA_ont import search_reads, classify_read, find_amplicon, get_mapped_reads, check_start, open_bed, calculate_normalised_counts, setup_counts
 
 # this is the truth for these reads
 
@@ -171,6 +172,17 @@ truth = {
         "align_score": 14.0,
         "amplicon": 97,
         "orf": None
+    },
+    "53619614-d945-4c47-88f0-119852dc80fe": {
+        "class": "gRNA",
+        "align_score": 64.0,
+        "amplicon": 1,
+        "orf": "ORF1a"
+    },
+    "amplicons": {
+        "V1": 98,
+        "V2": 98,
+        "V3": 98
     }
 
 
@@ -184,16 +196,23 @@ import pysam
 import os
 from artic.vcftagprimersites import read_bed_file
 
-
 dirname = os.path.dirname(__file__)
+reads_file = os.path.join(dirname,"reads.sam")
+primer_file = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
 
 def test_mapped_reads():
-    mapped_reads = get_mapped_reads("reads.sam")
-    assert mapped_reads == 23
+    mapped_reads = get_mapped_reads(reads_file)
+    assert mapped_reads == 24
 
+def test_setup_counts():
+    for primer_set in truth["amplicons"]:
+        primer_file = os.path.join(dirname, "../../periscope/resources/artic_primers_{}.bed".format(primer_set))
+        primer_bed_object = read_bed_file(primer_file)
+        total_counts = setup_counts(primer_bed_object)
+        assert len(total_counts) == truth["amplicons"][primer_set]
 
 def test_check_start():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     filename = os.path.join(dirname, "../../periscope/resources/orf_start.bed")
     bed_object = open_bed(filename)
     for read in inbamfile:
@@ -203,7 +222,7 @@ def test_check_start():
 
 def test_search_reads():
 
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
         search = 'AACCAACTTTCGATCTCTTGTAGATCTGTTCT'
         result = search_reads(read, search)
@@ -214,7 +233,7 @@ def test_find_amplicon():
 
     filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
     for read in inbamfile:
         amplicon = find_amplicon(read,primer_bed_object)["right_amplicon"]
         assert amplicon == truth[read.query_name]["amplicon"]
@@ -223,7 +242,7 @@ def test_find_amplicon():
 
 
 def test_classify_read():
-    inbamfile = pysam.AlignmentFile("reads.sam", "rb")
+    inbamfile = pysam.AlignmentFile(reads_file, "rb")
 
     filename = os.path.join(dirname, "../../periscope/resources/artic_primers_V3.bed")
     primer_bed_object = read_bed_file(filename)

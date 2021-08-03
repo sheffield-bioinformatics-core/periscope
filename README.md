@@ -39,11 +39,17 @@ periscope \
     --fastq <FULL_PATH_OF_FASTQ_FILE(s)> \ (space separated list of fastq files, you MUST use this for Illumina data)
     --output-prefix <PREFIX> \
     --sample <SAMPLE_NAME> \
-    --artic-primers <ASSAY_VERSION; V1,V2,V3 or 2kb> \
+    --artic-primers <ASSAY_VERSION; V1,V2,V3,V4,2kb,midnight> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --technology <SEQUECNING TECH; ont or illumina> \
     --threads <THREADS> 
 ```
+
+For custom primers use `--artic-primers` argument followed by:
+* path to the custom amplicons file
+* path to the custom primers file
+
+To view the requirements for these files and advice on how to generate them, go to [Custom amplicons and primers section](#custom123).
 
 `output-prefix` will be the directory and start of the filename for the output.
 
@@ -172,6 +178,46 @@ cd <INSTALLATION_PATH>/periscope/tests
 
 pytest test_search_for_sgRNA.py 
 ```
+
+# <a id="custom123"></a>Custom Amplicons and Primers
+
+## Custom Amplicons File
+Each line must be an amplicon entry with 4, tab-delimited, features:
+* Chrom - name for the reference sequence
+* Start - zero-based starting position of the amplicon in the ref seq
+* End - one-based ending position of the amplicon in the ref seq
+* Name - name for the amplicon
+
+Example amplicons.bed file:
+
+```
+MN908947.3	30  410 nCoV-2019_1
+MN908947.3	320	726	nCoV-2019_2
+MN908947.3	642	1028	nCoV-2019_3
+MN908947.3	943	1337	nCoV-2019_4
+MN908947.3	1242	1651	nCoV-2019_5
+MN908947.3	1573	1964	nCoV-2019_6
+```
+
+## Custom Primers File
+Each line must be a primer entry with 5, tab-delimited, features:
+* Chrom - name for the reference sequence
+* Start - zero-based starting position of the primer in the ref seq
+* End - one-based ending position of the primer in the ref seq
+* Primer ID - ID of the primer, including the amplicon number (inbetween underscores) and the primer direction (LEFT or RIGHT)
+* Primer Pool - primer pool assignment
+
+Example primers.bed file:
+
+```
+MN908947.3	30	54	nCoV-2019_1_LEFT	nCoV-2019_1
+MN908947.3	385	410	nCoV-2019_1_RIGHT	nCoV-2019_1
+MN908947.3	320	342	nCoV-2019_2_LEFT	nCoV-2019_2
+MN908947.3	704	726	nCoV-2019_2_RIGHT	nCoV-2019_2
+MN908947.3	642	664	nCoV-2019_3_LEFT	nCoV-2019_1
+MN908947.3	1004	1028	nCoV-2019_3_RIGHT	nCoV-2019_1
+```
+
 
 # Citations
 
