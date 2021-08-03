@@ -98,10 +98,6 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
             if any(".fastq.gz" in file for file in directory_listing):
                 gzipped=True
                 extension = "fastq.gz"
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
 
     if len(args.fastq)>0:
         for fastq in args.fastq:

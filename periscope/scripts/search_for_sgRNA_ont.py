@@ -509,20 +509,12 @@ def process_reads(data):
             if result["read_orf"] is None:
                 result["read_orf"] = "novel_"+str(read.pos)
 
-<<<<<<< HEAD
-            if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
-                total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
-            total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read.query_name)
-        else:
-            total_counts[amplicons["right_amplicon"]][read_class].append(read.query_name)
-=======
         if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
             total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
             
         total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read)
         #else:
         #    total_counts[amplicons["right_amplicon"]][read_class].append(read)
->>>>>>> origin/master
 
         # write the annotated read to a bam file
         outbamfile.write(read)
