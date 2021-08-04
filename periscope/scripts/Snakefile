@@ -101,7 +101,7 @@ rule split:
         threads = config.get("threads"),
         prefix = expand("{output_prefix}.split.",output_prefix=config.get("output_prefix")),
     shell:
-        "samtools view -H {input.bam} > {output.header} && samtools view {input.bam} > {output.sam} && split -d -l $(echo `wc -l {output.sam} | cut -f1 -d\" \"` /{params.threads}-1 | bc) {output.sam} {params.prefix}"
+        "samtools view -H {input.bam} > {output.header} && samtools view {input.bam} > {output.sam} && split -d -l $(echo `wc -l {output.sam} | cut -f1 -d \" \"` /{params.threads} | bc) {output.sam} {params.prefix}"
 
 rule reheader:
     input:
@@ -132,8 +132,8 @@ rule periscope:
         score_cutoff = config.get("score_cutoff"),
         sample = config.get("sample"),
         orf_bed = expand("{resources_dir}/{orf_bed}",resources_dir=config.get("resources_dir"),orf_bed=config.get("orf_bed")),
-        primer_bed = expand("{resources_dir}/{primer_bed}",resources_dir=config.get("resources_dir"),primer_bed=config.get("primer_bed")),
-        amplicon_bed =expand("{resources_dir}/{amplicon_bed}",resources_dir=config.get("resources_dir"),amplicon_bed=config.get("amplicon_bed")),
+        primer_bed = expand("{primer_bed}",primer_bed=config.get("primer_bed")),
+        amplicon_bed =expand("{amplicon_bed}",amplicon_bed=config.get("amplicon_bed")),
         tmp = config.get("tmp"),
         threads = config.get("threads")
 
