@@ -542,11 +542,10 @@ def finalise(args,total_counts):
     outfile_counts_novel = args.output_prefix + "_periscope_novel_counts.csv"
     output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel)
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
-def multiprocessing(func, args,
-                   workers):
-    with ProcessPoolExecutor(workers) as ex:
+def multiprocessing(func, args, workers):
+    with ThreadPoolExecutor(workers) as ex:
         res = list(tqdm(ex.map(func, args),total=len(args)))
     return list(res)
 
@@ -582,17 +581,17 @@ def main(args):
     # file_reads = open(outfile_reads, "w")
     # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
-    sgclasses = ['sgRNA_HQ', 'sgRNA_LQ', 'sgRNA_LLQ', 'nsgRNA_HQ', 'nsgRNA_LQ']
+    sgclasses = ['gRNA', 'sgRNA_HQ', 'sgRNA_LQ', 'sgRNA_LLQ', 'nsgRNA_HQ', 'nsgRNA_LQ']
 
-    print("here")
+    #print("here")
 
     total_counts = setup_counts(primer_bed_object)
 
+    #combine total_counts from multiprocessing
     for counts in processed:
         for amplicon in counts:
             # print(amplicon)
             total_counts[amplicon]["total_reads"] = total_counts[amplicon]["total_reads"]+counts[amplicon]["total_reads"]
-            total_counts[amplicon]["gRNA"] = total_counts[amplicon]["gRNA"] + counts[amplicon]["gRNA"]
             for sgclass in sgclasses:
                 #inside each class is an orf
                 for orf in counts[amplicon][sgclass]:
@@ -607,7 +606,6 @@ def main(args):
     finalise(args, total_counts)
 
     output_bams = [file+"_periscope_temp.bam" for file in files]
-    print(output_bams)
     pysam.merge(*["-f",args.output_prefix + "_periscope.bam"]+output_bams)
     # pysam.index(args.output_prefix + "_periscope.bam")
     # print(processed[5])
@@ -637,7 +635,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample', help='sample id',default="SAMPLE")
     parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
-    parser.add_argument('--threads', help='display progress bar', default=1)
+    parser.add_argument('--threads', help='threads used for multi-processing', default=1)
 
 
     args = parser.parse_args()
