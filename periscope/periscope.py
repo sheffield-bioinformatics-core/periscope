@@ -118,6 +118,7 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
     
     #check if version number is correct or if resource files exist when using custom primers
     version = args.artic_primers
+    version = [version] if isinstance(version, str) else version
     interest_bed = "artic_amplicons_of_interest.bed"
     
     if version[0] in ["V1", "V2", "V3", "V4", "2kb", "midnight"]:
