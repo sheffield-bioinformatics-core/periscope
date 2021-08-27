@@ -9,6 +9,7 @@ from artic.vcftagprimersites import read_bed_file
 import sys
 from numpy import median
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor as ProcessPool, process
 
 class ClassifiedRead():
     def __init__(self,sgRNA: bool,orf: str,read: pysam.AlignedRead):
@@ -186,55 +187,21 @@ def setup_counts(primer_bed_object):
             total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'gRNA': [], 'sgRNA_HQ': {}, 'sgRNA_LQ':{}, 'sgRNA_LLQ':{}, 'nsgRNA_HQ':{}, 'nsgRNA_LQ':{}}
     return total_counts
 
-
-
-def main(args):
-
-    # read input bam file
-    inbamfile = pysam.AlignmentFile(args.bam, "rb")
-
-    # get bam header so that we can use it for writing later
+def process_reads(data):
+    bam = data[0]
+    args = data[1]
+    inbamfile = pysam.AlignmentFile(bam, "rb")
     bam_header = inbamfile.header.copy().to_dict()
-    # open output bam with the header we just got
-    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
+    outbamfile = pysam.AlignmentFile(bam + "_periscope_temp.bam", "wb", header=bam_header)
 
-    # get mapped reads
-    mapped_reads = get_mapped_reads(args.bam)
+    mapped_reads = get_mapped_reads(bam)
+    logger.warning("Processing " + str(mapped_reads) + " reads")
 
-    # open the orfs bed file
     orf_bed_object = open_bed(args.orf_bed)
 
-    orf_coverage={}
-    # get coverage for each orf
-    logger.warning("getting coverage at canonical ORF sites")
-    for row in orf_bed_object:
-
-        median=get_coverage(row.start,row.end,inbamfile)
-
-        orf_coverage[row.name]=median
-    logger.warning("getting coverage at canonical ORF sites....DONE")
-
-    # read input bam file again
-    inbamfile = pysam.AlignmentFile(args.bam, "rb")
-
-    # open the artic primer bed file
-    primer_bed_object=read_bed_file(args.primer_bed)
-    # set the output reads filename
-    # outfile_reads = args.output_prefix + "_periscope_reads.tsv"
-    # set the output counts file name
-
-    # add headers to these files
-    # file_reads = open(outfile_reads, "w")
-    # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
-
-    total_counts = setup_counts(primer_bed_object)
-    # for every read let's decide if it's sgRNA or not
-    logger.warning("Processing " + str(mapped_reads) + " reads")
-    result={}
-    count=0
     orfs={}
     reads={}
-    for read in tqdm(inbamfile,total=mapped_reads):
+    for read in inbamfile:
 
         if read.seq == None:
             # print("%s read has no sequence" %
@@ -270,7 +237,6 @@ def main(args):
 
 
         )
-
 
     # now we have all the reads classified, deal with pairs
     logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
@@ -311,13 +277,191 @@ def main(args):
             continue
 
         if orf not in orfs:
-            orfs[orf] = [left_read_object]
+            orfs[orf] = [left_read_object.to_string()]
         else:
-            orfs[orf].append(left_read_object)
+            orfs[orf].append(left_read_object.to_string())
 
     logger.info("dealing with read pairs....DONE")
 
     outbamfile.close()
+
+    return orfs
+
+def multiprocessing(func, args, workers):
+    with ProcessPool(workers) as ex:
+        res = list(tqdm(ex.map(func, args), total=len(args)))
+    return res
+
+def combine(orfs_list):
+    import collections
+    super_dict = collections.defaultdict(list)
+    for d in orfs_list:
+        for k, v in d.items():
+            super_dict[k] = super_dict[k]+v
+    return super_dict
+
+def main(args):
+    
+    #get a list of bams:
+    import glob
+    files = glob.glob(args.output_prefix+".split.*.sam")
+
+    result=[]
+    for file in files:
+        result.append([file,args])
+
+    processed = multiprocessing(
+        process_reads,
+        args=result,
+        workers=int(args.threads)
+    )
+
+    orfs = combine(processed)
+
+    # read input bam file
+    # inbamfile = pysam.AlignmentFile(args.bam, "rb")
+
+    # # get bam header so that we can use it for writing later
+    # bam_header = inbamfile.header.copy().to_dict()
+    # # open output bam with the header we just got
+    # outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
+
+    
+
+    # # open the orfs bed file
+    # orf_bed_object = open_bed(args.orf_bed)
+
+    # orf_coverage={}
+    # # get coverage for each orf
+    # logger.warning("getting coverage at canonical ORF sites")
+    # for row in orf_bed_object:
+
+    #     median=get_coverage(row.start,row.end,inbamfile)
+
+    #     orf_coverage[row.name]=median
+    # logger.warning("getting coverage at canonical ORF sites....DONE")
+
+    # # read input bam file again
+    # inbamfile = pysam.AlignmentFile(args.bam, "rb")
+
+    # open the artic primer bed file
+    #primer_bed_object=read_bed_file(args.primer_bed)
+    # set the output reads filename
+    # outfile_reads = args.output_prefix + "_periscope_reads.tsv"
+    # set the output counts file name
+
+    # add headers to these files
+    # file_reads = open(outfile_reads, "w")
+    # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
+
+    #total_counts = setup_counts(primer_bed_object)
+    # for every read let's decide if it's sgRNA or not
+    
+    # result={}
+    # count=0
+    # orfs={}
+    # reads={}
+    # for read in tqdm(inbamfile,total=mapped_reads):
+
+    #     if read.seq == None:
+    #         # print("%s read has no sequence" %
+    #         #       (read.query_name), file=sys.stderr)
+    #         continue
+    #     if read.is_unmapped:
+    #         # print("%s skipped as unmapped" %
+    #         #       (read.query_name), file=sys.stderr)
+    #         continue
+    #     if read.is_supplementary:
+    #         # print("%s skipped as supplementary" %
+    #         #       (read.query_name), file=sys.stderr)
+    #         continue
+    #     if read.is_secondary:
+    #         # print("%s skipped as secondary" %
+    #         #       (read.query_name), file=sys.stderr)
+    #         continue
+    #     # print("------")
+    #     # print(read.query_name)
+    #     # # print(read.is_read1)
+    #     # # print(read.get_tags())
+    #     # print(read.cigar)
+    #     leader_search_result = extact_soft_clipped_bases(read)
+
+    #     if read.query_name not in reads:
+    #         reads[read.query_name] = []
+
+    #     orfRead = check_start(read, leader_search_result, orf_bed_object)
+
+    #     reads[read.query_name].append(
+
+    #         ClassifiedRead(sgRNA=leader_search_result,orf=orfRead,read=read)
+
+
+    #     )
+
+
+    # # now we have all the reads classified, deal with pairs
+    # logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
+    # logger.info("dealing with read pairs")
+    # for id,pair in reads.items():
+
+    #     # get the class and orf of the left hand read, this will be the classification and ORF for the pair - sometimes right read looks like it has subgenomic evidence - there are likely false positives
+
+    #     left_read = min(pair, key=lambda x: x.pos)
+
+    #     right_read = max(pair, key=lambda x: x.pos)
+
+    #     read_class = left_read.sgRNA
+    #     orf = left_read.orf
+
+    #     left_read_object = left_read.read
+    #     right_read_object = right_read.read
+
+    #     left_read_object.set_tag('XO', orf)
+    #     right_read_object.set_tag('XO', orf)
+
+    #     if read_class == True:
+    #         left_read_object.set_tag('XC', 'sgRNA')
+    #         right_read_object.set_tag('XC', 'sgRNA')
+    #     else:
+    #         left_read_object.set_tag('XC', 'gRNA')
+    #         right_read_object.set_tag('XC', 'gRNA')
+
+
+
+    #     outbamfile.write(left_read_object)
+    #     outbamfile.write(right_read_object)
+
+    #     if orf == None:
+    #         continue
+
+    #     if read_class == False:
+    #         continue
+
+    #     if orf not in orfs:
+    #         orfs[orf] = [left_read_object]
+    #     else:
+    #         orfs[orf].append(left_read_object)
+
+    # logger.info("dealing with read pairs....DONE")
+
+    #open the orfs bed file
+    orf_bed_object = open_bed(args.orf_bed)
+    inbamfile = pysam.AlignmentFile(args.bam, "rb")
+    mapped_reads = get_mapped_reads(args.bam)
+
+    orf_coverage={}
+    # get coverage for each orf
+    logger.warning("getting coverage at canonical ORF sites")
+    for row in orf_bed_object:
+
+        median=get_coverage(row.start,row.end,inbamfile)
+
+        orf_coverage[row.name]=median
+    logger.warning("getting coverage at canonical ORF sites....DONE")
+
+    # outbamfile.close()
+    output_bams = [file+"_periscope_temp.bam" for file in files]
+    pysam.merge(*["-f",args.output_prefix + "_periscope.bam"]+output_bams)
     pysam.sort("-o", args.output_prefix + "_periscope_sorted.bam",  args.output_prefix + "_periscope.bam")
     pysam.index(args.output_prefix + "_periscope_sorted.bam")
 
