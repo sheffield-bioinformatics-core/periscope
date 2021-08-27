@@ -445,9 +445,6 @@ def process_reads(data):
 
     outbamfile = pysam.AlignmentFile(bam + "_periscope_temp.bam", "wb", header=bam_header)
 
-    # get mapped reads
-    mapped_reads = get_mapped_reads(bam)
-
     # open the orfs bed file
     orf_bed_object = open_bed(args.orf_bed)
     # open the artic primer bed file
@@ -503,7 +500,7 @@ def process_reads(data):
         if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
             total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
 
-        total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append('+')
+        total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read.to_string())
 
         # write the annotated read to a bam file
         outbamfile.write(read)
