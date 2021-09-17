@@ -11,7 +11,7 @@ rule all:
         # amplicon list
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
         # tagged bam
-        expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
+        # expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_header.txt",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}.split.00.sam",output_prefix=config.get("output_prefix"))
         # expand("{output_prefix}_periscope.bam.bai",output_prefix=config.get("output_prefix"))
@@ -121,7 +121,7 @@ rule periscope:
         bam = expand("{output_prefix}.bam",output_prefix=config.get("output_prefix")),
         bai = expand("{output_prefix}.bam.bai",output_prefix=config.get("output_prefix"))
     output:
-        expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
+        # expand("{output_prefix}_periscope.bam",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_counts.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_amplicons.csv",output_prefix=config.get("output_prefix")),
         expand("{output_prefix}_periscope_novel_counts.csv",output_prefix=config.get("output_prefix"))
