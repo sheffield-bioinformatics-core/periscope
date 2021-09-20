@@ -13,6 +13,7 @@ import os
 import pprint as pp
 import snakemake
 from collections import namedtuple
+from concurrent.futures import ProcessPoolExecutor as ProcessPool
 class PeriscopeRead(object):
     def __init__(self, read):
         self.read = read
@@ -194,7 +195,6 @@ def calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicon,orf_b
               "sgRPTg"]
         f.write(",".join(header)+"\n")
         for amplicon in total_counts:
-
             # total count of gRNA for amplicon
             amplicon_gRNA_count = 0
 
@@ -433,36 +433,26 @@ def output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_n
                 f.write(",".join(line) + "\n")
         f.close()
 
-
-def main(args):
-
+def process_reads(data):
+    bam = data[0]
+    args = data[1]
+    # print("processing bam:" + bam)
     # read input bam file
-    inbamfile = pysam.AlignmentFile(args.bam, "rb")
+    inbamfile = pysam.AlignmentFile(bam, "rb")
     # get bam header so that we can use it for writing later
     bam_header = inbamfile.header.copy().to_dict()
     # open output bam with the header we just got
-    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
 
-    # get mapped reads
-    mapped_reads = get_mapped_reads(args.bam)
+    outbamfile = pysam.AlignmentFile(bam + "_periscope_temp.bam", "wb", header=bam_header)
 
     # open the orfs bed file
     orf_bed_object = open_bed(args.orf_bed)
     # open the artic primer bed file
     primer_bed_object=read_bed_file(args.primer_bed)
-    # set the output reads filename
-    # outfile_reads = args.output_prefix + "_periscope_reads.tsv"
-    # set the output counts file name
-
-    # add headers to these files
-    # file_reads = open(outfile_reads, "w")
-    # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
 
     total_counts = setup_counts(primer_bed_object)
     # for every read let's decide if it's sgRNA or not
-    print("Processing " + str(mapped_reads) + " reads", file=sys.stderr)
-    for read in tqdm(inbamfile,total=mapped_reads):
-
+    for read in inbamfile:
         if read.seq == None:
             # print("%s read has no sequence" %
             #       (read.query_name), file=sys.stderr)
@@ -509,23 +499,46 @@ def main(args):
 
         if result["read_orf"] not in total_counts[amplicons["right_amplicon"]][read_class]:
             total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]] = []
-            
-        total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read)
-        #else:
-        #    total_counts[amplicons["right_amplicon"]][read_class].append(read)
+
+        total_counts[amplicons["right_amplicon"]][read_class][result["read_orf"]].append(read.to_string())
 
         # write the annotated read to a bam file
         outbamfile.write(read)
 
     outbamfile.close()
-    pysam.index(args.output_prefix + "_periscope.bam")
 
+    return total_counts
+
+def combine(processed_counts, primer_bed_object):
+
+    sgclasses = ['gRNA', 'sgRNA_HQ', 'sgRNA_LQ', 'sgRNA_LLQ', 'nsgRNA_HQ', 'nsgRNA_LQ']
+    total_counts = setup_counts(primer_bed_object)
+
+    for counts in processed_counts:
+        for amplicon in counts:
+            # print(amplicon)
+            total_counts[amplicon]["total_reads"] = total_counts[amplicon]["total_reads"]+counts[amplicon]["total_reads"]
+            for sgclass in sgclasses:
+                #inside each class is an orf
+                for orf in counts[amplicon][sgclass]:
+                    # print(orf)
+                    # print(counts[amplicon][sgclass][orf])
+                    #inside each orf is a list
+                    if orf in total_counts[amplicon][sgclass]:
+                        total_counts[amplicon][sgclass][orf] = total_counts[amplicon][sgclass][orf] + counts[amplicon][sgclass][orf]
+                    else:
+                        total_counts[amplicon][sgclass][orf] = counts[amplicon][sgclass][orf]
+    return total_counts
+
+def finalise(args,total_counts):
 
     # define ORF bed object because we cleared our session
     orf_bed_object = open_bed(args.orf_bed)
 
     # go through each amplicon and do normalisations
     outfile_amplicons = args.output_prefix + "_periscope_amplicons.csv"
+    # print(outfile_amplicons)
+    mapped_reads = get_mapped_reads(args.bam)
     total_counts,orf_bed_object = calculate_normalised_counts(mapped_reads,total_counts,outfile_amplicons,orf_bed_object)
     # summarise result into ORFs
     result = summarised_counts_per_orf(total_counts,orf_bed_object)
@@ -533,6 +546,36 @@ def main(args):
     outfile_counts = args.output_prefix + "_periscope_counts.csv"
     outfile_counts_novel = args.output_prefix + "_periscope_novel_counts.csv"
     output_summarised_counts(mapped_reads,result,outfile_counts,outfile_counts_novel)
+
+def multiprocessing(func, args, workers):
+    with ProcessPool(workers) as ex:
+        res = list(tqdm(ex.map(func, args),total=len(args)))
+    return list(res)
+
+def main(args):
+    # get a list of bams:
+    import glob
+    files = glob.glob(args.output_prefix+".split.*.sam")
+
+    result=[]
+    for file in files:
+        result.append([file,args])
+
+    #initiate parallel processing of reads
+    processed = multiprocessing(
+        process_reads,
+        args=result,
+        workers=int(args.threads)
+    )
+
+    #combine total counts from multiprocessing
+    primer_bed_object = read_bed_file(args.primer_bed)
+    total_counts = combine(processed, primer_bed_object)
+
+    finalise(args, total_counts)
+
+    output_bams = [file+"_periscope_temp.bam" for file in files]
+    pysam.merge(*["-f",args.output_prefix + "_periscope.bam"]+output_bams)
 
 
 if __name__ == '__main__':
@@ -547,6 +590,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample', help='sample id',default="SAMPLE")
     parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
+    parser.add_argument('--threads', help='threads used for multi-processing', default=1)
 
 
     args = parser.parse_args()

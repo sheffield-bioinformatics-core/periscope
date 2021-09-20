@@ -15,8 +15,7 @@ def main():
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
     parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1 (default), V2, V3, V4\n* 2kb (for the UCL longer amplicons)\n* midnight (1.2kb midnight amplicons)\n* for custom primers provide path to amplicons file first and primers file second', nargs='*', default="V1")
-    parser.add_argument('--threads', dest='threads', help='number of threads',
-                        default="1")
+    parser.add_argument('--threads', dest='threads', help='number of threads used for mapping and sgRNA counting',default="1")
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
     parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
@@ -26,11 +25,51 @@ def main():
     parser.add_argument('--sample', help='sample id', default="SHEF-D2BD9")
     parser.add_argument('--technology', help='the sequencing technology used, either:\n*ont\n*illumina', default="ont")
 
+    print("""
+             /yddmmmddds:                         
+           -hd/` `:hd-`+dy::::::::--`             
+          .dh`     `yd. .dmsoooooosshho.          
+          sm-  :o/  .my  +m/         -yd+         
+          hd  -mmm:  hd  .ms           om:        
+          hd  -mmm:  dd  .ms           -mo        
+          om:  -+:  -ms  +mhoo+-       .ms        
+          `dh.     `hd. -dy:::sd/      .ms        
+           .yd/.`./hd:-ods`   .ms      .ms        
+            `:syyyhhyyyo-     .ms      .ms        
+               ````````       .ms      .ms        
+                              .ms      .ms        
+                              .ms      .ms        
+                              .ms      .ms        
+ ``            ```            .ms      .ms        
+ `````       `.```````      ``-ms      .ms   `.`  
+ ```````````.` ```` ``.`````.`.ms      .ms`.``    
+  ``.``     ``.`````.`````  `.-ms      .ms`  `.`` 
+oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
+.-:shs:```./yho:--:ohy:.``.:yho:--:ohy/:ms.:shs:-.
+ ```.+yhyyhy/.``.```./yhyyhy/.``````./yhdhyy+.``  
+   `..``.````.``    `.``..```.`     `.``..` `.`   
+  `````````.` ``..``` ```.`.` ```````  ``..`` ``` 
+   `..`     `.``    `.`     `.`     `.`     `..`  
+ ```  ``````` ``````  ``...`` ```.``   `````` ````
+    ```     ```     ```    ``.`     `.`     `.`   
+  ``` ``````` ``..``` ``````   `````` ``...``   . 
+    `..`    ``.`    `..`    `..`    `.`     `..`  
+      ```````          `.`..`          ```..`     
+                  _                          
+  █ ▄▄  ▄███▄   █▄▄▄▄ ▄█    ▄▄▄▄▄   ▄█▄    ████▄ █ ▄▄  ▄███▄   
+█   █ █▀   ▀  █  ▄▀ ██   █     ▀▄ █▀ ▀▄  █   █ █   █ █▀   ▀  
+█▀▀▀  ██▄▄    █▀▀▌  ██ ▄  ▀▀▀▀▄   █   ▀  █   █ █▀▀▀  ██▄▄    
+█     █▄   ▄▀ █  █  ▐█  ▀▄▄▄▄▀    █▄  ▄▀ ▀████ █     █▄   ▄▀ 
+ █    ▀███▀     █    ▐            ▀███▀         █    ▀███▀   
+  ▀            ▀                                 ▀          
+                                                    Vanguard
+    """)
 
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit(1)
 
     args = parser.parse_args()
-
-
 
     # if technology is illumina then we need to know where fastqs are because they could be paired end
     # this will work with any fastq input type
@@ -40,7 +79,7 @@ def main():
             exit(1)
 
     # check if fastq_dir exists
-    print(args.fastq_dir)
+
     gzipped=False
     extension="fastq"
     if args.fastq_dir:
@@ -58,7 +97,6 @@ def main():
             if any(".fastq.gz" in file for file in directory_listing):
                 gzipped=True
                 extension = "fastq.gz"
-
 
     if len(args.fastq)>0:
         for fastq in args.fastq:
@@ -80,6 +118,7 @@ def main():
     
     #check if version number is correct or if resource files exist when using custom primers
     version = args.artic_primers
+    version = [version] if isinstance(version, str) else version
     interest_bed = "artic_amplicons_of_interest.bed"
     
     if version[0] in ["V1", "V2", "V3", "V4", "2kb", "midnight"]:

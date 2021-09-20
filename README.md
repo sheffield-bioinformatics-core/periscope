@@ -1,7 +1,5 @@
 ![alt text](https://github.com/sheffield-bioinformatics-core/periscope/blob/master/periscope.png "periscope")
 
-**v0.0.8 With improved Illumina sgRNA detection**
-
 # periscope
 
 A tool to quantify sub-genomic RNA (sgRNA) expression in SARS-CoV-2 artic network amplicon sequencing data.
@@ -12,6 +10,7 @@ Initial classification of reads into sub-genomic or not based on https://www.bio
 Please cite our pre-print if you use this tool in any publications:
 
 https://www.biorxiv.org/content/10.1101/2020.07.01.181867v1
+
 
 # Requirements
 periscope runs on MacOS and Linux. We have also confirmed the tool runs under windows 10 unix subsystem.
@@ -43,7 +42,7 @@ periscope \
     --artic-primers <ASSAY_VERSION; V1,V2,V3,V4,2kb,midnight> \
     --resources <PATH_TO_PERISCOPE_RESOURCES_FOLDER> \
     --technology <SEQUECNING TECH; ont or illumina> \
-    --threads <THREADS_FOR_MAPPING> 
+    --threads <THREADS> 
 ```
 
 For custom primers use `--artic-primers` argument followed by:

@@ -9,13 +9,15 @@ from artic.vcftagprimersites import read_bed_file
 import sys
 from numpy import median
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor as ProcessPool, process
+import time
 
 class ClassifiedRead():
     def __init__(self,sgRNA: bool,orf: str,read: pysam.AlignedRead):
         self.sgRNA = sgRNA
         self.orf = orf
         self.pos = read.pos
-        self.read = read
+        self.read = read.to_string()
 
 def get_mapped_reads(bam):
     mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
@@ -186,55 +188,20 @@ def setup_counts(primer_bed_object):
             total_counts[amplicon] = {'pool': primer["PoolName"], 'total_reads': 0, 'gRNA': [], 'sgRNA_HQ': {}, 'sgRNA_LQ':{}, 'sgRNA_LLQ':{}, 'nsgRNA_HQ':{}, 'nsgRNA_LQ':{}}
     return total_counts
 
+def process_reads(data):
+    bam = data[0]
+    args = data[1]
+    inbamfile = pysam.AlignmentFile(bam, "rb")
+    #bam_header = inbamfile.header.copy().to_dict()
+    
 
+    mapped_reads = get_mapped_reads(bam)
+    logger.warning("Processing " + str(mapped_reads) + " reads")
 
-def main(args):
-
-    # read input bam file
-    inbamfile = pysam.AlignmentFile(args.bam, "rb")
-
-    # get bam header so that we can use it for writing later
-    bam_header = inbamfile.header.copy().to_dict()
-    # open output bam with the header we just got
-    outbamfile = pysam.AlignmentFile(args.output_prefix + "_periscope.bam", "wb", header=bam_header)
-
-    # get mapped reads
-    mapped_reads = get_mapped_reads(args.bam)
-
-    # open the orfs bed file
     orf_bed_object = open_bed(args.orf_bed)
 
-    orf_coverage={}
-    # get coverage for each orf
-    logger.warning("getting coverage at canonical ORF sites")
-    for row in orf_bed_object:
-
-        median=get_coverage(row.start,row.end,inbamfile)
-
-        orf_coverage[row.name]=median
-    logger.warning("getting coverage at canonical ORF sites....DONE")
-
-    # read input bam file again
-    inbamfile = pysam.AlignmentFile(args.bam, "rb")
-
-    # open the artic primer bed file
-    primer_bed_object=read_bed_file(args.primer_bed)
-    # set the output reads filename
-    # outfile_reads = args.output_prefix + "_periscope_reads.tsv"
-    # set the output counts file name
-
-    # add headers to these files
-    # file_reads = open(outfile_reads, "w")
-    # file_reads.write("sample\tread_id\tposition\tread_length\torf\tscore\tclass\tamplicon\n")
-
-    total_counts = setup_counts(primer_bed_object)
-    # for every read let's decide if it's sgRNA or not
-    logger.warning("Processing " + str(mapped_reads) + " reads")
-    result={}
-    count=0
-    orfs={}
     reads={}
-    for read in tqdm(inbamfile,total=mapped_reads):
+    for read in inbamfile:
 
         if read.seq == None:
             # print("%s read has no sequence" %
@@ -247,7 +214,7 @@ def main(args):
         if read.is_supplementary:
             # print("%s skipped as supplementary" %
             #       (read.query_name), file=sys.stderr)
-            continue
+            continue  
         if read.is_secondary:
             # print("%s skipped as secondary" %
             #       (read.query_name), file=sys.stderr)
@@ -263,7 +230,6 @@ def main(args):
             reads[read.query_name] = []
 
         orfRead = check_start(read, leader_search_result, orf_bed_object)
-
         reads[read.query_name].append(
 
             ClassifiedRead(sgRNA=leader_search_result,orf=orfRead,read=read)
@@ -271,44 +237,48 @@ def main(args):
 
         )
 
+    return(reads)
 
+def process_pairs(reads_dict):
+    # outbamfile = pysam.AlignmentFile(out_prefix + "_periscope.bam", "wb", header=bam_header)
     # now we have all the reads classified, deal with pairs
-    logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
+    #logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
     logger.info("dealing with read pairs")
-    for id,pair in reads.items():
 
+    orfs={}
+    for id,pair in reads_dict.items():
         # get the class and orf of the left hand read, this will be the classification and ORF for the pair - sometimes right read looks like it has subgenomic evidence - there are likely false positives
 
         left_read = min(pair, key=lambda x: x.pos)
 
-        right_read = max(pair, key=lambda x: x.pos)
+        # right_read = max(pair, key=lambda x: x.pos)
 
         read_class = left_read.sgRNA
         orf = left_read.orf
 
         left_read_object = left_read.read
-        right_read_object = right_read.read
+        # right_read_object = right_read.read
 
-        left_read_object.set_tag('XO', orf)
-        right_read_object.set_tag('XO', orf)
+        # left_read_object.set_tag('XO', orf)
+        # right_read_object.set_tag('XO', orf)
 
-        if read_class == True:
-            left_read_object.set_tag('XC', 'sgRNA')
-            right_read_object.set_tag('XC', 'sgRNA')
-        else:
-            left_read_object.set_tag('XC', 'gRNA')
-            right_read_object.set_tag('XC', 'gRNA')
+        # if read_class == True:
+        #     left_read_object.set_tag('XC', 'sgRNA')
+        #     right_read_object.set_tag('XC', 'sgRNA')
+        # else:
+        #     left_read_object.set_tag('XC', 'gRNA')
+        #     right_read_object.set_tag('XC', 'gRNA')
 
-
-
-        outbamfile.write(left_read_object)
-        outbamfile.write(right_read_object)
+        # outbamfile.write(left_read_object)
+        # outbamfile.write(right_read_object)
 
         if orf == None:
             continue
 
         if read_class == False:
             continue
+
+        #print("forward?", left_read_object.is_read1, "paired?", left_read_object.is_paired)
 
         if orf not in orfs:
             orfs[orf] = [left_read_object]
@@ -317,9 +287,65 @@ def main(args):
 
     logger.info("dealing with read pairs....DONE")
 
-    outbamfile.close()
-    pysam.sort("-o", args.output_prefix + "_periscope_sorted.bam",  args.output_prefix + "_periscope.bam")
-    pysam.index(args.output_prefix + "_periscope_sorted.bam")
+    # outbamfile.close()
+
+    return orfs
+
+def multiprocessing(func, args, workers):
+    with ProcessPool(workers) as ex:
+        res = list(tqdm(ex.map(func, args), total=len(args)))
+    return res
+
+def combine(reads_dictList):
+    import collections
+    super_dict = collections.defaultdict(list)
+    for d in reads_dictList:
+        for k, v in d.items():
+            super_dict[k]=super_dict[k]+v
+    return super_dict
+
+def main(args):
+
+    # t1=time.time()
+    inbamfile = pysam.AlignmentFile(args.bam, "rb")
+    # bam_header = inbamfile.header.copy().to_dict()
+
+    #get a list of bams:
+    import glob
+    files = glob.glob(args.output_prefix+".split.*.sam")
+
+    result=[]
+    for file in files:
+        result.append([file,args])
+
+    processed = multiprocessing(
+        process_reads,
+        args=result,
+        workers=int(args.threads)
+    )
+    reads_dict = combine(processed)
+    orfs = process_pairs(reads_dict)
+
+    #open the orfs bed file
+    orf_bed_object = open_bed(args.orf_bed)
+    
+    mapped_reads = get_mapped_reads(args.bam)
+
+    orf_coverage={}
+    # get coverage for each orf
+    logger.warning("getting coverage at canonical ORF sites")
+    for row in orf_bed_object:
+
+        median=get_coverage(row.start,row.end,inbamfile)
+
+        orf_coverage[row.name]=median
+    logger.warning("getting coverage at canonical ORF sites....DONE")
+
+    # outbamfile.close()
+    # output_bams = [args.output_prefix+"_periscope.bam"]
+    # pysam.merge(*["-f",args.output_prefix + "_periscope.bam"]+output_bams)
+    # pysam.sort("-o", args.output_prefix + "_periscope_sorted.bam",  args.output_prefix + "_periscope.bam")
+    # pysam.index(args.output_prefix + "_periscope_sorted.bam")
 
     novel_count=0
     canonical = open(args.output_prefix+"_periscope_counts.csv","w")
@@ -351,6 +377,8 @@ def main(args):
     amplicons.write("not used yet")
     amplicons.close()
 
+    # t2=time.time()
+    # print("periscope.py time:", t2-t1)
 
 if __name__ == '__main__':
 
@@ -366,7 +394,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample', help='sample id',default="SAMPLE")
     parser.add_argument('--tmp',help="pybedtools likes to write to /tmp if you want to write somewhere else define it here",default="/tmp")
     parser.add_argument('--progress', help='display progress bar', default="")
-
+    parser.add_argument('--threads', help='display progress bar', default=1)
 
     logger = logging
     logger.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
