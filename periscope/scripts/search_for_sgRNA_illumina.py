@@ -20,7 +20,7 @@ class ClassifiedRead():
         self.read = read.to_string()
 
 def get_mapped_reads(bam):
-    mapped_reads = int(pysam.idxstats(bam).split("\n")[0].split("\t")[2])
+    mapped_reads = int(pysam.flagstat(bam).split("\n")[4].split(" ")[0])-int(pysam.flagstat(bam).split("\n")[2].split(" ")[0])-int(pysam.flagstat(bam).split("\n")[1].split(" ")[0])
     return mapped_reads
 
 # def check_start(bed_object,read):
