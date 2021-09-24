@@ -15,7 +15,8 @@ def main():
     parser.add_argument('--output-prefix',dest='output_prefix', help='Prefix of the output file',default="test")
     parser.add_argument('--score-cutoff',dest='score_cutoff', help='Cut-off for alignment score of leader (50)',default=50)
     parser.add_argument('--artic-primers', dest='artic_primers', help='artic network primer version used:\n* V1 (default), V2, V3, V4\n* 2kb (for the UCL longer amplicons)\n* midnight (1.2kb midnight amplicons)\n* for custom primers provide path to amplicons file first and primers file second', nargs='*', default="V1")
-    parser.add_argument('--threads', dest='threads', help='number of threads used for mapping and sgRNA counting',default="1")
+    parser.add_argument('-t', '--threads', dest='threads', help='number of threads used for sgRNA counting',default="1")
+    parser.add_argument('-mp', '--mapping-threads', dest='mapping_threads', help='number of threads used for mapping. Defaults to the number of threads used for sgRNA counting.')
     parser.add_argument('-r', '--resources', dest='resources', help="the path to the periscope resources directory - this is the place you cloned periscope into")
     parser.add_argument('-d', '--dry-run', action='store_true', help="perform a snakemake dryrun")
     parser.add_argument('-f', '--force', action='store_true', help="Overwrite all output", dest="force")
@@ -136,7 +137,11 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
         print("{} artic primer version incorrect".format(version[0]), file=sys.stderr)
         exit(1)
 
-
+    # default mapping_threads to sgRNA counting threads specified
+    if args.mapping_threads:
+        mapping_threads = args.mapping_threads
+    else: 
+        mapping_threads = args.threads
 
     config = dict(
         fastq_dir=args.fastq_dir,
@@ -154,10 +159,12 @@ oso/.`.````..-+ssss+-`..```..-omhss+-` .ms``.-/oso
         reference_fasta='nCoV-2019.reference.fasta',
         sample=args.sample,
         threads=args.threads,
+        mapping_threads=mapping_threads,
         tmp=args.tmp,
         technology=args.technology
     )
 
+    print(config['threads'], config['mapping_threads'])
 
 
     snakefile = os.path.join(scripts_dir, 'Snakefile')
