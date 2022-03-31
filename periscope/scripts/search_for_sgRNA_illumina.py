@@ -246,6 +246,7 @@ def process_pairs(reads_dict):
     logger.info("dealing with read pairs")
 
     orfs={}
+    orfs_gRNA={}
     for id,pair in reads_dict.items():
         # get the class and orf of the left hand read, this will be the classification and ORF for the pair - sometimes right read looks like it has subgenomic evidence - there are likely false positives
 
@@ -276,6 +277,10 @@ def process_pairs(reads_dict):
             continue
 
         if read_class == False:
+            if orf not in orfs_gRNA:
+                orfs_gRNA[orf] = 1
+            else:
+                orfs_gRNA[orf] +=1
             continue
 
         #print("forward?", left_read_object.is_read1, "paired?", left_read_object.is_paired)
@@ -289,7 +294,7 @@ def process_pairs(reads_dict):
 
     # outbamfile.close()
 
-    return orfs
+    return orfs, orfs_gRNA
 
 def multiprocessing(func, args, workers):
     with ProcessPool(workers) as ex:
@@ -324,7 +329,7 @@ def main(args):
         workers=int(args.threads)
     )
     reads_dict = combine(processed)
-    orfs = process_pairs(reads_dict)
+    orfs, orfs_gRNA = process_pairs(reads_dict)
 
     #open the orfs bed file
     orf_bed_object = open_bed(args.orf_bed)
@@ -349,7 +354,7 @@ def main(args):
 
     novel_count=0
     canonical = open(args.output_prefix+"_periscope_counts.csv","w")
-    canonical.write(",".join(["sample","mapped_reads","orf","sgRNA_count","coverage", "sgRPTL","sgRPHT\n"]))
+    canonical.write(",".join(["sample","mapped_reads", "gRNA_count","orf","sgRNA_count","coverage", "sgRPTL","sgRPHT\n"]))
 
     novel = open(args.output_prefix+"_periscope_novel_counts.csv","w")
     novel.write(",".join(["sample","mapped_reads", "orf", "sgRNA_count", "coverage", "sgRPTL","sgRPHT\n"]))
@@ -360,7 +365,7 @@ def main(args):
         sgRPHT = len(orfs[orf]) / (mapped_reads / 100000)
         if "novel" not in orf:
             sgRPTL = len(orfs[orf])/(orf_coverage[orf]/1000)
-            canonical.write(args.sample+","+str(mapped_reads)+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTL)+","+str(sgRPHT)+"\n")
+            canonical.write(args.sample+","+str(mapped_reads)+","+str(orfs_gRNA[orf])+","+orf+","+str(len(orfs[orf]))+","+str(orf_coverage[orf])+","+str(sgRPTL)+","+str(sgRPHT)+"\n")
         else:
             position = int(orf.split("_")[1])
             coverage=get_coverage(position-20,position+20,inbamfile)
