@@ -240,9 +240,7 @@ def process_reads(data):
     return(reads)
 
 def process_pairs(reads_dict):
-    # outbamfile = pysam.AlignmentFile(out_prefix + "_periscope.bam", "wb", header=bam_header)
     # now we have all the reads classified, deal with pairs
-    #logger.warning("Processing " + str(mapped_reads) + " reads....DONE")
     logger.info("dealing with read pairs")
 
     orfs={}
@@ -252,47 +250,29 @@ def process_pairs(reads_dict):
 
         left_read = min(pair, key=lambda x: x.pos)
 
-        # right_read = max(pair, key=lambda x: x.pos)
-
         read_class = left_read.sgRNA
         orf = left_read.orf
 
         left_read_object = left_read.read
-        # right_read_object = right_read.read
-
-        # left_read_object.set_tag('XO', orf)
-        # right_read_object.set_tag('XO', orf)
-
-        # if read_class == True:
-        #     left_read_object.set_tag('XC', 'sgRNA')
-        #     right_read_object.set_tag('XC', 'sgRNA')
-        # else:
-        #     left_read_object.set_tag('XC', 'gRNA')
-        #     right_read_object.set_tag('XC', 'gRNA')
-
-        # outbamfile.write(left_read_object)
-        # outbamfile.write(right_read_object)
 
         if orf == None:
             continue
 
+        #build orfs_gRNA for every non-novel sgRNA
+        if orf not in orfs_gRNA and "novel" not in orf:
+            orfs_gRNA[orf] = 0
+
+        #assign read to gRNA
         if read_class == False:
-            if orf not in orfs_gRNA:
-                orfs_gRNA[orf] = 1
-            else:
-                orfs_gRNA[orf] +=1
-            continue
-
-        #print("forward?", left_read_object.is_read1, "paired?", left_read_object.is_paired)
-
-        if orf not in orfs:
-            orfs[orf] = [left_read_object]
+            orfs_gRNA[orf] += 1
         else:
-            orfs[orf].append(left_read_object)
+            #assign read to sgRNA
+            if orf not in orfs:
+                orfs[orf] = [left_read_object]
+            else:
+                orfs[orf].append(left_read_object)
 
     logger.info("dealing with read pairs....DONE")
-
-    # outbamfile.close()
 
     return orfs, orfs_gRNA
 
